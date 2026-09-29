@@ -1,3 +1,4 @@
+import os
 import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.edge.service import Service
@@ -13,9 +14,9 @@ import re
 from urllib.parse import quote
 
 
-# =========================
+
 # KONFIGURASI MICROSOFT EDGE
-# =========================
+
 
 options = Options()
 options.add_argument("--start-maximized")
@@ -28,9 +29,9 @@ driver = webdriver.Edge(
 wait = WebDriverWait(driver, 15)
 
 
-# =========================
+
 # KONFIGURASI PELABUHAN
-# =========================
+
 
 PELABUHAN = {
     "Batam Centre": [
@@ -102,15 +103,15 @@ for nama_pelabuhan, targets in PELABUHAN.items():
         print("\nURL saat ini:")
         print(driver.current_url)
 
-        # =========================
+        
         # TAMPILKAN LINK HASIL
-        # =========================
+        
 
         links = driver.find_elements(By.TAG_NAME, "a")
 
-        # =========================
+        
         # MENCARI HASIL YANG SESUAI
-        # =========================
+        
 
         for link in links:
             text = link.text.strip()
@@ -120,9 +121,9 @@ for nama_pelabuhan, targets in PELABUHAN.items():
                 target_url = href
                 break
 
-        # =========================
+        
         # MEMBUKA HALAMAN TEMPAT
-        # =========================
+        
 
         if target_url:
 
@@ -136,9 +137,9 @@ for nama_pelabuhan, targets in PELABUHAN.items():
 
             print("\nHalaman tempat berhasil dibuka.")
 
-            # =========================
+            
             # MENCARI TOMBOL ULASAN
-            # =========================
+            
 
             review_button = wait.until(
                 EC.element_to_be_clickable(
@@ -157,9 +158,9 @@ for nama_pelabuhan, targets in PELABUHAN.items():
 
             time.sleep(3)
 
-            # =========================
+            
             # MENCARI PANEL ULASAN
-            # =========================
+            
 
             print("\nMencari panel ulasan...")
 
@@ -219,9 +220,9 @@ for nama_pelabuhan, targets in PELABUHAN.items():
 
             print("Selesai membuka teks review.")
 
-            # =========================
+            
             # AMBIL SEMUA REVIEW
-            # =========================
+            
 
             print("\nMengambil data review...")
 
@@ -232,17 +233,17 @@ for nama_pelabuhan, targets in PELABUHAN.items():
 
             print("Jumlah review ditemukan:", len(review_elements))
 
-            # =========================
+            
             # PROSES SETIAP REVIEW
-            # =========================
+            
 
             for i, review in enumerate(review_elements):
 
                 try:
 
-                    # ---------------------------------
+                    
                     # Ambil semua teks dalam review
-                    # ---------------------------------
+                    
 
                     lines = review.text.strip().split("\n")
 
@@ -252,9 +253,9 @@ for nama_pelabuhan, targets in PELABUHAN.items():
                         if line.strip()
                     ]
 
-                    # ---------------------------------
+                    
                     # NAMA REVIEWER
-                    # ---------------------------------
+                    
 
                     try:
 
@@ -269,9 +270,9 @@ for nama_pelabuhan, targets in PELABUHAN.items():
 
                         nama = lines[0] if lines else ""
 
-                    # ---------------------------------
+                    
                     # RATING
-                    # ---------------------------------
+                    
 
                     try:
 
@@ -290,9 +291,9 @@ for nama_pelabuhan, targets in PELABUHAN.items():
 
                         rating = None
 
-                    # ---------------------------------
+                    
                     # TANGGAL
-                    # ---------------------------------
+                    
 
                     tanggal = None
 
@@ -317,9 +318,9 @@ for nama_pelabuhan, targets in PELABUHAN.items():
                             tanggal = line
                             break
 
-                    # ---------------------------------
+                    
                     # TEKS REVIEW
-                    # ---------------------------------
+                    
 
                     teks_review = ""
 
@@ -329,9 +330,9 @@ for nama_pelabuhan, targets in PELABUHAN.items():
 
                         kandidat = lines[index_tanggal + 1:]
 
-                        # ---------------------------------
+                        
                         # Hapus elemen UI Google Maps
-                        # ---------------------------------
+                        
 
                         kandidat = [
                             x for x in kandidat
@@ -340,9 +341,9 @@ for nama_pelabuhan, targets in PELABUHAN.items():
 
                         teks_review = " ".join(kandidat).strip()
 
-                        # ---------------------------------
+                        
                         # MEMBERSIHKAN NOISE REVIEW
-                        # ---------------------------------
+                        
 
                         # Hapus timestamp seperti:
                         # 0:05, 0:24, 0:06, 1:03
@@ -402,9 +403,9 @@ for nama_pelabuhan, targets in PELABUHAN.items():
                             teks_review
                         ).strip()
 
-                    # ---------------------------------
+                    
                     # TAMPILKAN HASIL
-                    # ---------------------------------
+                    
 
                     print("\n" + "=" * 80)
 
@@ -415,9 +416,9 @@ for nama_pelabuhan, targets in PELABUHAN.items():
                     print("Tanggal  :", tanggal)
                     print("Ulasan   :", teks_review)
 
-                    # ---------------------------------
+                    
                     # SIMPAN KE LIST
-                    # ---------------------------------
+                    
 
                     data_review.append({
 
@@ -441,24 +442,32 @@ for nama_pelabuhan, targets in PELABUHAN.items():
                     )
 
 
-# =========================
 # SIMPAN KE CSV
-# =========================
 
 df = pd.DataFrame(data_review)
 
-nama_file = "review_pelabuhan.csv"
+# Folder penyimpanan data raw
+folder_raw = "data/raw"
+
+# Membuat folder jika belum ada
+os.makedirs(folder_raw, exist_ok=True)
+
+# Nama file
+nama_file = "review_telaga_punggur.csv"
+
+# Path lengkap file
+path_file = os.path.join(folder_raw, nama_file)
 
 df.to_csv(
-    nama_file,
+    path_file,
     index=False,
     encoding="utf-8-sig"
 )
 
 
-# =========================
+
 # INFORMASI HASIL
-# =========================
+
 
 print("\n" + "=" * 80)
 
