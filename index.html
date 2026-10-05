@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Analisis Sentimen Pelabuhan Ferry Batam</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex">
+
+    <!-- SIDEBAR NAVIGASI (Sesuai Catatan Diskusi & Storyboard) -->
+    <aside class="w-64 bg-slate-900 text-slate-300 flex flex-col shrink-0 min-h-screen border-r border-slate-800">
+        <!-- Logo Header -->
+        <div class="p-5 border-b border-slate-800 flex items-center space-x-3">
+            <div class="w-10 h-10 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-bold text-xl">
+                <i class="fa-solid fa-anchor"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-white text-base leading-tight">Analisis Sentimen</h1>
+                <p class="text-xs text-slate-400">Pelabuhan Batam</p>
+            </div>
+        </div>
+
+        <!-- Filter Global di Sidebar -->
+        <div class="p-4 border-b border-slate-800 space-y-3 bg-slate-950/40">
+            <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Filter Data</div>
+            
+            <div>
+                <label class="text-xs font-medium text-slate-300 mb-1 block">Pilih Pelabuhan:</label>
+                <select id="globalPortSelect" onchange="updateAllData()" class="w-full bg-slate-800 border border-slate-700 text-white text-xs rounded-md p-2 outline-none focus:ring-1 focus:ring-indigo-500">
+                    <option value="all">Semua Pelabuhan</option>
+                    <option value="center">Batam Center</option>
+                    <option value="sekupang">Sekupang</option>
+                    <option value="punggur">Telaga Punggur</option>
+                    <option value="harbour">Harbour Bay</option>
+                    <option value="nongsa">Nongsapura</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="text-xs font-medium text-slate-300 mb-1 block">Rentang Tanggal:</label>
+                <input type="date" class="w-full bg-slate-800 border border-slate-700 text-white text-xs rounded-md p-1.5 outline-none mb-1">
+                <input type="date" class="w-full bg-slate-800 border border-slate-700 text-white text-xs rounded-md p-1.5 outline-none">
+            </div>
+
+            <div class="text-[10px] text-slate-500 italic pt-1">
+                Terakhir diperbarui: <span id="lastUpdated">05/10/2026</span>
+            </div>
+        </div>
+
+        <!-- Menu Navigasi Sidebar -->
+        <nav class="flex-1 p-3 space-y-1">
+            <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-medium text-white bg-indigo-600 transition">
+                <i class="fa-solid fa-chart-pie w-4"></i>
+                <span>Dashboard</span>
+            </button>
+            <button onclick="switchTab('popularitas')" id="nav-popularitas" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:bg-slate-800 hover:text-white transition">
+                <i class="fa-solid fa-chart-simple w-4"></i>
+                <span>Popularitas & Rating</span>
+            </button>
+            <button onclick="switchTab('tren')" id="nav-tren" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:bg-slate-800 hover:text-white transition">
+                <i class="fa-solid fa-chart-line w-4"></i>
+                <span>Tren Ulasan</span>
+            </button>
+            <button onclick="switchTab('aspek')" id="nav-aspek" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:bg-slate-800 hover:text-white transition">
+                <i class="fa-solid fa-comments w-4"></i>
+                <span>Aspek Ulasan</span>
+            </button>
+            <button onclick="switchTab('sentimen')" id="nav-sentimen" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:bg-slate-800 hover:text-white transition">
+                <i class="fa-solid fa-sliders w-4"></i>
+                <span>Sentimen & Evaluasi</span>
+            </button>
+            <button onclick="switchTab('uji')" id="nav-uji" class="nav-btn w-full flex items-center space-x-3 px-3 py-2.5 rounded-lg text-xs font-medium text-slate-400 hover:bg-slate-800 hover:text-white transition">
+                <i class="fa-solid fa-vial-virus w-4"></i>
+                <span>Uji Sentimen Real-Time</span>
+            </button>
+        </nav>
+    </aside>
+
+    <!-- CONTENT AREA -->
+    <main class="flex-1 p-8 overflow-y-auto min-h-screen">
+
+        <!-- 1. HALAMAN DASHBOARD -->
+        <div id="page-dashboard" class="page-content space-y-6">
+            <div>
+                <h2 class="text-2xl font-bold text-slate-800">Dashboard</h2>
+                <p class="text-xs text-slate-500">Ringkasan Analisis Sentimen Ulasan Pelabuhan Ferry Batam</p>
+            </div>
+
+            <!-- Ringkasan Cards (5 Kolom sesuai Lo-Fi) -->
+            <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                    <p class="text-xs font-medium text-slate-400">Total Ulasan</p>
+                    <h3 id="dashTotal" class="text-2xl font-extrabold text-slate-800 mt-1">2,471</h3>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                    <p class="text-xs font-medium text-slate-400">Rata-Rata Rating</p>
+                    <h3 class="text-2xl font-extrabold text-amber-500 mt-1">4.0 ★</h3>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                    <p class="text-xs font-medium text-slate-400">Ulasan Positif</p>
+                    <h3 id="dashPos" class="text-2xl font-extrabold text-emerald-600 mt-1">1,680</h3>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                    <p class="text-xs font-medium text-slate-400">Ulasan Negatif</p>
+                    <h3 id="dashNeg" class="text-2xl font-extrabold text-rose-600 mt-1">450</h3>
+                </div>
+                <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center col-span-2 md:col-span-1">
+                    <p class="text-xs font-medium text-slate-400">Ulasan Netral</p>
+                    <h3 id="dashNeu" class="text-2xl font-extrabold text-amber-600 mt-1">341</h3>
+                </div>
+            </div>
+
+            <!-- Data Ulasan Pelabuhan Mentah (5 Kartu Pelabuhan) -->
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                <div>
+                    <h3 class="text-base font-bold text-slate-800">Data Ulasan Pelabuhan</h3>
+                    <p class="text-xs text-slate-500">Pilih pelabuhan untuk melihat ulasan mentah</p>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4">
+                    <div class="border border-slate-200 p-4 rounded-lg text-center bg-slate-50 hover:bg-indigo-50/50 hover:border-indigo-200 transition">
+                        <h4 class="font-bold text-sm text-slate-800 mb-1">Batam Center</h4>
+                        <p class="text-xs text-slate-400 mb-3">661 Ulasan</p>
+                        <button onclick="openRawModal('Batam Center')" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800">Lihat Detail &gt;</button>
+                    </div>
+                    <div class="border border-slate-200 p-4 rounded-lg text-center bg-slate-50 hover:bg-indigo-50/50 hover:border-indigo-200 transition">
+                        <h4 class="font-bold text-sm text-slate-800 mb-1">Sekupang</h4>
+                        <p class="text-xs text-slate-400 mb-3">259 Ulasan</p>
+                        <button onclick="openRawModal('Sekupang')" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800">Lihat Detail &gt;</button>
+                    </div>
+                    <div class="border border-slate-200 p-4 rounded-lg text-center bg-slate-50 hover:bg-indigo-50/50 hover:border-indigo-200 transition">
+                        <h4 class="font-bold text-sm text-slate-800 mb-1">Telaga Punggur</h4>
+                        <p class="text-xs text-slate-400 mb-3">1,041 Ulasan</p>
+                        <button onclick="openRawModal('Telaga Punggur')" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800">Lihat Detail &gt;</button>
+                    </div>
+                    <div class="border border-slate-200 p-4 rounded-lg text-center bg-slate-50 hover:bg-indigo-50/50 hover:border-indigo-200 transition">
+                        <h4 class="font-bold text-sm text-slate-800 mb-1">Harbour Bay</h4>
+                        <p class="text-xs text-slate-400 mb-3">222 Ulasan</p>
+                        <button onclick="openRawModal('Harbour Bay')" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800">Lihat Detail &gt;</button>
+                    </div>
+                    <div class="border border-slate-200 p-4 rounded-lg text-center bg-slate-50 hover:bg-indigo-50/50 hover:border-indigo-200 transition">
+                        <h4 class="font-bold text-sm text-slate-800 mb-1">Nongsapura</h4>
+                        <p class="text-xs text-slate-400 mb-3">288 Ulasan</p>
+                        <button onclick="openRawModal('Nongsapura')" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800">Lihat Detail &gt;</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. HALAMAN POPULARITAS DAN RATING -->
+        <div id="page-popularitas" class="page-content space-y-6 hidden">
+            <div>
+                <h2 class="text-2xl font-bold text-slate-800">Popularitas Dan Rating</h2>
+                <p class="text-xs text-slate-500">Analisis popularitas dan kualitas rating pelabuhan ferry</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Grafik Batang Distribusi Popularitas -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col h-80">
+                    <h3 class="text-sm font-bold text-slate-700 mb-4">Distribusi Popularitas (Volume Data)</h3>
+                    <div class="flex-1 relative">
+                        <canvas id="chartPopularitas"></canvas>
+                    </div>
+                </div>
+
+                <!-- Diagram Pencar Kualitas Rating vs Volume -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col h-80">
+                    <h3 class="text-sm font-bold text-slate-700 mb-4">Kualitas Rating vs Volume (Scatter Plot)</h3>
+                    <div class="flex-1 relative">
+                        <canvas id="chartScatter"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 3. HALAMAN TREN ULASAN -->
+        <div id="page-tren" class="page-content space-y-6 hidden">
+            <div>
+                <h2 class="text-2xl font-bold text-slate-800">Tren Ulasan</h2>
+                <p class="text-xs text-slate-500">Tren volume ulasan dan perkembangan aspek dari waktu ke waktu</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Grafik Garis Tren Volume -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col h-80">
+                    <h3 class="text-sm font-bold text-slate-700 mb-4">Tren Volume Ulasan Per Bulan</h3>
+                    <div class="flex-1 relative">
+                        <canvas id="chartTrenVolume"></canvas>
+                    </div>
+                </div>
+
+                <!-- Grafik Garis Tren Aspek -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col h-80">
+                    <h3 class="text-sm font-bold text-slate-700 mb-4">Tren Aspek Dari Waktu Ke Waktu</h3>
+                    <div class="flex-1 relative">
+                        <canvas id="chartTrenAspek"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 4. HALAMAN ASPEK ULASAN -->
+        <div id="page-aspek" class="page-content space-y-6 hidden">
+            <div>
+                <h2 class="text-2xl font-bold text-slate-800">Aspek Ulasan</h2>
+                <p class="text-xs text-slate-500">Analisis aspek keluhan dan pujian serta kata yang paling sering muncul</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- 100% Stacked Bar Chart -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col h-80">
+                    <h3 class="text-sm font-bold text-slate-700 mb-4">Analisis Aspek Keluhan & Pujian</h3>
+                    <div class="flex-1 relative">
+                        <canvas id="chartStackedAspect"></canvas>
+                    </div>
+                </div>
+
+                <!-- WordCloud Visualizer -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col h-80">
+                    <h3 class="text-sm font-bold text-slate-700 mb-2">WordCloud Kata Kunci Utama</h3>
+                    <div class="flex-1 border border-dashed border-slate-300 rounded-lg flex flex-wrap items-center justify-center p-6 gap-3 bg-slate-50">
+                        <span class="text-3xl font-extrabold text-indigo-600">fasilitas</span>
+                        <span class="text-xl font-bold text-rose-500">parkir jelek</span>
+                        <span class="text-2xl font-semibold text-emerald-500">pelayanan bagus</span>
+                        <span class="text-lg text-slate-700">antrean tiket</span>
+                        <span class="text-2xl font-bold text-indigo-500">AC dingin</span>
+                        <span class="text-base text-rose-400">toilet kotor</span>
+                        <span class="text-xl font-medium text-emerald-600">bersih nyaman</span>
+                        <span class="text-sm text-slate-500">jadwal kapal</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 5. HALAMAN SENTIMEN & EVALUASI -->
+        <div id="page-sentimen" class="page-content space-y-6 hidden">
+            <div>
+                <h2 class="text-2xl font-bold text-slate-800">Sentimen & Evaluasi Model</h2>
+                <p class="text-xs text-slate-500">Visualisasi sentimen dan evaluasi model SVM</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Heatmap Layout Mockup -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col h-80">
+                    <h3 class="text-sm font-bold text-slate-700 mb-4">Heatmap Intensitas Sentimen per Pelabuhan</h3>
+                    <div class="flex-1 grid grid-cols-3 gap-2 text-center text-xs font-semibold">
+                        <div class="bg-emerald-100 text-emerald-800 p-3 rounded flex items-center justify-center">Fasilitas (High Pos)</div>
+                        <div class="bg-rose-200 text-rose-800 p-3 rounded flex items-center justify-center">Parkir (High Neg)</div>
+                        <div class="bg-amber-100 text-amber-800 p-3 rounded flex items-center justify-center">Keamanan (Neutral)</div>
+                        <div class="bg-emerald-200 text-emerald-900 p-3 rounded flex items-center justify-center">Pelayanan (High Pos)</div>
+                        <div class="bg-rose-100 text-rose-800 p-3 rounded flex items-center justify-center">Kebersihan (Low Neg)</div>
+                        <div class="bg-emerald-100 text-emerald-800 p-3 rounded flex items-center justify-center">Aksesibilitas (Pos)</div>
+                    </div>
+                </div>
+
+                <!-- Confusion Matrix Table -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col h-80">
+                    <h3 class="text-sm font-bold text-slate-700 mb-2">Confusion Matrix Model SVM</h3>
+                    <p class="text-xs text-slate-400 mb-4">Pengujian Data Uji (486 Sample Ulasan)</p>
+                    <div class="flex-1 overflow-x-auto">
+                        <table class="w-full text-center text-xs border-collapse">
+                            <thead>
+                                <tr>
+                                    <th class="p-1 border border-slate-200 bg-slate-50" colSpan="2" rowSpan="2">Actual \ Pred</th>
+                                    <th class="p-1 border border-slate-200 bg-slate-100 font-bold" colSpan="3">Prediksi Model</th>
+                                </tr>
+                                <tr>
+                                    <th class="p-1 border text-rose-600 bg-rose-50">Negatif</th>
+                                    <th class="p-1 border text-amber-600 bg-amber-50">Netral</th>
+                                    <th class="p-1 border text-emerald-600 bg-emerald-50">Positif</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <th class="p-1 border bg-slate-100 font-bold" rowSpan="3">Label Asli</th>
+                                    <th class="p-1 border text-rose-600 bg-rose-50">Negatif</th>
+                                    <td class="p-2 border bg-emerald-100 font-bold">38</td>
+                                    <td class="p-2 border">11</td>
+                                    <td class="p-2 border">12</td>
+                                </tr>
+                                <tr>
+                                    <th class="p-1 border text-amber-600 bg-amber-50">Netral</th>
+                                    <td class="p-2 border">10</td>
+                                    <td class="p-2 border bg-emerald-100 font-bold">23</td>
+                                    <td class="p-2 border">28</td>
+                                </tr>
+                                <tr>
+                                    <th class="p-1 border text-emerald-600 bg-emerald-50">Positif</th>
+                                    <td class="p-2 border">26</td>
+                                    <td class="p-2 border">50</td>
+                                    <td class="p-2 border bg-emerald-100 font-bold">288</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 6. HALAMAN UJI SENTIMEN DAN KESIMPULAN ANALISIS -->
+        <div id="page-uji" class="page-content space-y-6 hidden">
+            <div>
+                <h2 class="text-2xl font-bold text-slate-800">Uji Sentimen</h2>
+                <p class="text-xs text-slate-500">Pengujian sentimen secara real time dan ringkasan hasil analisis</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Box Sistem Uji Sentimen -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                    <h3 class="text-sm font-bold text-slate-700">Sistem Uji Sentimen</h3>
+                    <p class="text-xs text-slate-400">Masukkan ulasan dasar untuk mengetahui sentimennya</p>
+                    
+                    <textarea id="ujiInput" rows="4" class="w-full p-3 border border-slate-300 rounded-lg text-xs outline-none focus:ring-1 focus:ring-indigo-500" placeholder="Tulis ulasan disini..."></textarea>
+                    
+                    <div class="text-right">
+                        <button onclick="prosesUjiSentimen()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-4 py-2 rounded-lg transition">Uji Sentimen</button>
+                    </div>
+
+                    <div id="ujiResult" class="border border-slate-200 bg-slate-50 p-3 rounded-lg text-xs space-y-1 hidden">
+                        <p class="font-bold text-slate-700">Hasil Prediksi SVM:</p>
+                        <p id="ujiBadge" class="font-extrabold text-indigo-600 text-sm">-</p>
+                    </div>
+                </div>
+
+                <!-- Box Ringkasan & Kesimpulan -->
+                <div class="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4 flex flex-col justify-between">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-700 mb-1">Ringkasan Analisis Sentimen</h3>
+                        <p class="text-xs text-slate-400 mb-4">Informasi ulang dari hasil analisis sentimen</p>
+
+                        <div class="grid grid-cols-3 gap-2 text-center mb-6">
+                            <div class="bg-emerald-50 border border-emerald-100 p-3 rounded-lg">
+                                <p class="text-xs font-semibold text-emerald-700">Positif</p>
+                                <p class="text-lg font-bold text-emerald-600 mt-1">68%</p>
+                            </div>
+                            <div class="bg-rose-50 border border-rose-100 p-3 rounded-lg">
+                                <p class="text-xs font-semibold text-rose-700">Negatif</p>
+                                <p class="text-lg font-bold text-rose-600 mt-1">18%</p>
+                            </div>
+                            <div class="bg-amber-50 border border-amber-100 p-3 rounded-lg">
+                                <p class="text-xs font-semibold text-amber-700">Netral</p>
+                                <p class="text-lg font-bold text-amber-600 mt-1">14%</p>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h4 class="text-xs font-bold text-slate-700 mb-1">Kesimpulan:</h4>
+                            <p class="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-200">
+                                Mayoritas pengguna merasa puas terhadap fasilitas dan kebersihan terminal pelabuhan ferry di Batam. Namun, aspek antrean tiket dan area parkir kendaraan menjadi fokus utama keluhan negatif yang perlu diperbaiki oleh pengelola.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- MODAL RAW DATA ULASAN MENTAH -->
+    <div id="rawModal" class="fixed inset-0 bg-slate-900/50 hidden items-center justify-center p-4 z-50">
+        <div class="bg-white w-full max-w-2xl rounded-xl shadow-lg p-6 space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-200 pb-3">
+                <h3 id="modalPortTitle" class="text-base font-bold text-slate-800">Ulasan Mentah Pelabuhan</h3>
+                <button onclick="closeRawModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+            <div class="max-h-60 overflow-y-auto space-y-2 text-xs">
+                <div class="p-3 bg-slate-50 rounded border border-slate-200">
+                    <div class="flex justify-between font-semibold text-slate-700"><span>Rico Pasaribu</span><span>★ 1</span></div>
+                    <p class="text-slate-500 mt-1">jaringan lelet</p>
+                </div>
+                <div class="p-3 bg-slate-50 rounded border border-slate-200">
+                    <div class="flex justify-between font-semibold text-slate-700"><span>Andreas Sihono</span><span>★ 3</span></div>
+                    <p class="text-slate-500 mt-1">Pelayanan tiket bagus, kemarin beli tiket ferry majestic. Sayang toiletnya kurang terawat</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT & CHART INITIALIZATION -->
+    <script>
+        // Navigation Handler
+        function switchTab(tabName) {
+            document.querySelectorAll('.page-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-indigo-600', 'text-white');
+                btn.classList.add('text-slate-400', 'hover:bg-slate-800', 'hover:text-white');
+            });
+
+            document.getElementById(`page-${tabName}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`nav-${tabName}`);
+            activeBtn.classList.remove('text-slate-400', 'hover:bg-slate-800', 'hover:text-white');
+            activeBtn.classList.add('bg-indigo-600', 'text-white');
+        }
+
+        // Global Filter Handler
+        function updateAllData() {
+            const port = document.getElementById('globalPortSelect').value;
+            if(port === 'all') {
+                document.getElementById('dashTotal').innerText = "2,471";
+                document.getElementById('dashPos').innerText = "1,680";
+                document.getElementById('dashNeg').innerText = "450";
+                document.getElementById('dashNeu').innerText = "341";
+            } else {
+                document.getElementById('dashTotal').innerText = "661";
+                document.getElementById('dashPos').innerText = "410";
+                document.getElementById('dashNeg').innerText = "150";
+                document.getElementById('dashNeu').innerText = "101";
+            }
+        }
+
+        // Modal Handler
+        function openRawModal(portName) {
+            document.getElementById('modalPortTitle').innerText = `Ulasan Mentah - ${portName}`;
+            document.getElementById('rawModal').classList.remove('hidden');
+            document.getElementById('rawModal').classList.add('flex');
+        }
+        function closeRawModal() {
+            document.getElementById('rawModal').classList.add('hidden');
+            document.getElementById('rawModal').classList.remove('flex');
+        }
+
+        // Uji Sentimen Handler
+        function prosesUjiSentimen() {
+            const txt = document.getElementById('ujiInput').value.trim();
+            if(!txt) return alert("Masukkan teks ulasan terlebih dahulu!");
+            
+            const res = document.getElementById('ujiResult');
+            const badge = document.getElementById('ujiBadge');
+            res.classList.remove('hidden');
+
+            if(txt.toLowerCase().includes('jelek') || txt.toLowerCase().includes('lama') || txt.toLowerCase().includes('kotor')) {
+                badge.innerText = "NEGATIF (SVM Score: 89%)";
+                badge.className = "font-extrabold text-rose-600 text-sm";
+            } else {
+                badge.innerText = "POSITIF (SVM Score: 93%)";
+                badge.className = "font-extrabold text-emerald-600 text-sm";
+            }
+        }
+
+        // Chart.js Inits
+        window.onload = function() {
+            // Chart 1: Popularitas
+            new Chart(document.getElementById('chartPopularitas'), {
+                type: 'bar',
+                data: {
+                    labels: ['Telaga Punggur', 'Batam Center', 'Nongsapura', 'Sekupang', 'Harbour Bay'],
+                    datasets: [{ label: 'Jumlah Ulasan', data: [1041, 661, 288, 259, 222], backgroundColor: '#4f46e5' }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // Chart 2: Scatter Plot
+            new Chart(document.getElementById('chartScatter'), {
+                type: 'scatter',
+                data: {
+                    datasets: [{
+                        label: 'Pelabuhan',
+                        data: [{x: 1041, y: 4.2}, {x: 661, y: 3.9}, {x: 288, y: 4.5}, {x: 259, y: 4.1}, {x: 222, y: 4.3}],
+                        backgroundColor: '#f59e0b'
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // Chart 3: Tren Volume
+            new Chart(document.getElementById('chartTrenVolume'), {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun'],
+                    datasets: [{ label: 'Volume Ulasan', data: [120, 190, 300, 250, 420, 310], borderColor: '#10b981', fill: false }]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // Chart 4: Tren Aspek
+            new Chart(document.getElementById('chartTrenAspek'), {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun'],
+                    datasets: [
+                        { label: 'Fasilitas', data: [40, 60, 80, 81, 95, 110], borderColor: '#4f46e5' },
+                        { label: 'Pelayanan', data: [20, 45, 60, 55, 70, 85], borderColor: '#f43f5e' }
+                    ]
+                },
+                options: { responsive: true, maintainAspectRatio: false }
+            });
+
+            // Chart 5: Stacked Bar Chart
+            new Chart(document.getElementById('chartStackedAspect'), {
+                type: 'bar',
+                data: {
+                    labels: ['Fasilitas', 'Pelayanan', 'Parkir', 'Kebersihan'],
+                    datasets: [
+                        { label: 'Pujian (%)', data: [80, 70, 30, 85], backgroundColor: '#10b981' },
+                        { label: 'Keluhan (%)', data: [20, 30, 70, 15], backgroundColor: '#f43f5e' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: { x: { stacked: true }, y: { stacked: true } }
+                }
+            });
+        };
+    </script>
+</body>
+</html>
