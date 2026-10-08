@@ -1,0 +1,7 @@
+scraper/edge_profile/
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/

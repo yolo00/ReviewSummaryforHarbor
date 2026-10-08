@@ -5,10 +5,9 @@ from datetime import datetime
 
 import pandas as pd
 from selenium import webdriver
-from selenium.common.exceptions import StaleElementReferenceException
 from selenium.webdriver.common.action_chains import ActionChains
-from selenium.webdriver.common.actions.wheel_input import ScrollOrigin
 from selenium.webdriver.common.by import By
+from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.edge.options import Options
 from selenium.webdriver.edge.service import Service
 from selenium.webdriver.support import expected_conditions as EC
@@ -20,15 +19,8 @@ from webdriver_manager.microsoft import EdgeChromiumDriverManager
 # KONFIGURASI MICROSOFT EDGE
 # =============================================================
 
-# Folder profil Edge khusus scraper. Login Google disimpan di sini,
-# jadi cukup login satu kali dan tidak hilang di run berikutnya.
-FOLDER_PROFIL = os.path.abspath("edge_profile")
-
 options = Options()
 options.add_argument("--start-maximized")
-options.add_argument(f"--user-data-dir={FOLDER_PROFIL}")
-options.add_experimental_option("excludeSwitches", ["enable-automation"])
-options.add_argument("--disable-blink-features=AutomationControlled")
 
 driver = webdriver.Edge(
     service=Service(EdgeChromiumDriverManager().install()),
@@ -104,22 +96,15 @@ PELABUHAN = {
     ],
 }
 
-JUMLAH_SCROLL = 150           # maksimal putaran scroll per tempat
-BATAS_TANPA_PENAMBAHAN = 5   # berhenti scroll jika 5x berturut-turut tidak ada review baru
+JUMLAH_SCROLL = 30
 KATA_WAKTU = [
     "hari lalu", "minggu lalu", "bulan lalu", "tahun lalu",
     "hari yang lalu", "minggu yang lalu",
     "bulan yang lalu", "tahun yang lalu",
 ]
 
-_sekarang = datetime.now()
-SCRAPED_AT = _sekarang.strftime("%Y-%m-%d %H:%M:%S")   # kolom scraped_at
-STAMP_RUN = _sekarang.strftime("%Y%m%d_%H%M%S")        # suffix nama file
-
-KOLOM = [
-    "lokasi", "pelabuhan", "nama_reviewer", "rating", "tanggal",
-    "review", "has_photo", "is_localguide", "scraped_at",
-]
+# Waktu scraping (satu nilai untuk seluruh run)
+SCRAPED_AT = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
 
 # =============================================================
@@ -167,39 +152,11 @@ def bersihkan_review(teks):
     return re.sub(r"\s+", " ", teks).strip()
 
 
-def simpan_csv(data, nama_file):
-    df = pd.DataFrame(data, columns=KOLOM)
-
-    # Beberapa link bisa mengarah ke tempat yang sama, buang review duplikat
-    jumlah_sebelum = len(df)
-    df = df.drop_duplicates(
-        subset=["lokasi", "nama_reviewer", "rating", "review"],
-        keep="first"
-    )
-    print(f"Duplikat dibuang: {jumlah_sebelum - len(df)}")
-
-    folder_raw = "data/raw"
-    os.makedirs(folder_raw, exist_ok=True)
-
-    path_file = os.path.join(folder_raw, nama_file)
-    df.to_csv(path_file, index=False, encoding="utf-8-sig")
-
-    return len(df), path_file
-
-
-def siapkan_login():
-    #opsional login, biar bisa 
-    driver.get("https://www.google.com/maps")
-    print("\n" + "=" * 60)
-    print("Cek pojok kanan atas Google Maps:")
-    print(" - Jika masih ada tombol 'Login', login dulu secara manual")
-    print("   di jendela Edge ini (jangan lewat kode).")
-    print(" - Jika sudah login, langsung lanjut.")
-    print("=" * 60)
-    input("Tekan Enter untuk mulai scraping...")
-
-
 def buka_tab_ulasan():
+    """
+    Klik tab 'Ulasan' (bukan tombol 'Tulis/Buat ulasan' yang membuka login).
+    Tab Ulasan berupa button dengan role='tab'; tombol tulis ulasan bukan tab.
+    """
     huruf_kecil = (
         "translate(@aria-label, "
         "'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz')"
@@ -221,10 +178,8 @@ def buka_tab_ulasan():
     url_sebelum = driver.current_url
     tombol.click()
 
-    # Cooldown beri waktu panel ulasan selesai terbuka
-    time.sleep(2)
-
     # Pengaman: jika tidak sengaja terlempar ke halaman login, kembali
+    time.sleep(2)
     if "accounts.google.com" in driver.current_url:
         print("Terlempar ke halaman login, kembali ke halaman tempat.")
         driver.get(url_sebelum)
@@ -233,99 +188,19 @@ def buka_tab_ulasan():
     print("Tab Ulasan diklik.")
 
 
-JS_SCROLL_KONTAINER = """
-let el = arguments[0];
-const goyang = arguments[1];
+def scrape_tempat(lokasi, nama_pelabuhan, url):
+    """Scrape semua review dari satu link Google Maps. Return list of dict."""
+    hasil = []
 
-// Cari kontainer yang benar-benar bisa di-scroll (naik dari elemen yang diberikan)
-while (el && !(el.scrollHeight > el.clientHeight + 5 &&
-       /(auto|scroll)/.test(getComputedStyle(el).overflowY))) {
-    el = el.parentElement;
-}
-if (!el) { return false; }
-
-if (goyang) {
-    // Naik sedikit lalu turun lagi supaya event scroll benar-benar terpicu
-    el.scrollTop = Math.max(0, el.scrollTop - 400);
-    el.dispatchEvent(new Event('scroll', {bubbles: true}));
-}
-el.scrollTop = el.scrollHeight;
-el.dispatchEvent(new Event('scroll', {bubbles: true}));
-el.dispatchEvent(new WheelEvent('wheel', {deltaY: 800, bubbles: true}));
-return true;
-"""
-
-
-def gulir_ke_bawah(panel, goyang=False):
-    #force scroll mentok kebawah
-    kartu = driver.find_elements(By.CSS_SELECTOR, "div.jftiEf")
-    titik_awal = kartu[-1] if kartu else panel
-
-    ok = driver.execute_script(JS_SCROLL_KONTAINER, titik_awal, goyang)
-
-    if goyang or not ok:
-        # Dorongan tambahan: roda mouse asli (hanya scroll, tanpa klik)
-        try:
-            ActionChains(driver).scroll_from_origin(
-                ScrollOrigin.from_element(titik_awal), 0, 800
-            ).perform()
-        except Exception:
-            pass
-
-
-def scroll_ulasan(panel):
-    #fix: scroll tanpa klik apapun, biar tidak tekan "Tulis Ulasan"
-    jumlah_terakhir = 0
-    tanpa_tambahan = 0
-
-    for i in range(JUMLAH_SCROLL):
-        try:
-            gulir_ke_bawah(panel)
-            time.sleep(2)
-
-            jumlah = len(driver.find_elements(By.CSS_SELECTOR, "div.jftiEf"))
-
-            if jumlah == jumlah_terakhir:
-                # Belum ada review baru: beri dorongan kedua (goyang + roda mouse)
-                gulir_ke_bawah(panel, goyang=True)
-                time.sleep(2)
-                jumlah = len(driver.find_elements(By.CSS_SELECTOR, "div.jftiEf"))
-            print(f"Scroll ke-{i + 1}/{JUMLAH_SCROLL} | review termuat: {jumlah}", end="\r")
-
-            if jumlah == jumlah_terakhir:
-                tanpa_tambahan += 1
-                if tanpa_tambahan >= BATAS_TANPA_PENAMBAHAN:
-                    print("\nTidak ada review baru, scroll dihentikan.")
-                    break
-            else:
-                tanpa_tambahan = 0
-                jumlah_terakhir = jumlah
-
-        except StaleElementReferenceException:
-            continue
-        except KeyboardInterrupt:
-            print("\nCtrl+C diterima, mengambil review yang sudah termuat...")
-            return True
-
-    print("\nScrolling selesai.")
-    return False
-
-
-def scrape_tempat(lokasi, nama_pelabuhan, url, output):
-    """
-    Scrape review dari satu link Google Maps.
-    Hasil langsung ditambahkan ke list `output`, jadi tetap aman
-    jika proses dihentikan di tengah jalan.
-    """
     driver.get(url)
     time.sleep(7)  # beri waktu short link redirect dan halaman termuat
     print("URL akhir:", driver.current_url)
 
     # --- Tab Ulasan ---
     buka_tab_ulasan()
-    time.sleep(1)
+    time.sleep(3)
 
-    # --- Panel ulasan (hanya dipakai sebagai penanda halaman siap) ---
+    # --- Panel ulasan ---
     panel = wait.until(
         EC.presence_of_element_located(
             (
@@ -337,8 +212,14 @@ def scrape_tempat(lokasi, nama_pelabuhan, url, output):
     )
     print("Panel ulasan ditemukan.")
 
-    # --- Scroll otomatis (tanpa klik) ---
-    dibatalkan = scroll_ulasan(panel)
+    # --- Scroll otomatis ---
+    ActionChains(driver).move_to_element(panel).click().perform()
+
+    for i in range(JUMLAH_SCROLL):
+        ActionChains(driver).send_keys(Keys.PAGE_DOWN).perform()
+        time.sleep(2)
+        print(f"Scroll ke-{i + 1}/{JUMLAH_SCROLL}", end="\r")
+    print("\nScrolling selesai.")
 
     # --- Buka teks "Lainnya" ---
     review_elements = driver.find_elements(By.CSS_SELECTOR, "div.jftiEf")
@@ -350,15 +231,13 @@ def scrape_tempat(lokasi, nama_pelabuhan, url, output):
             )
             if tombol:
                 driver.execute_script("arguments[0].click();", tombol[0])
-                time.sleep(0.5 if not dibatalkan else 0.1)
+                time.sleep(0.5)
         except Exception:
             pass
 
     # --- Ambil data review ---
     review_elements = driver.find_elements(By.CSS_SELECTOR, "div.jftiEf")
     print("Jumlah review ditemukan:", len(review_elements))
-
-    jumlah_awal = len(output)
 
     for i, review in enumerate(review_elements):
         try:
@@ -404,7 +283,7 @@ def scrape_tempat(lokasi, nama_pelabuhan, url, output):
             has_photo = cek_has_photo(review)
             is_localguide = cek_is_localguide(review, lines)
 
-            output.append({
+            hasil.append({
                 "lokasi": lokasi,
                 "pelabuhan": nama_pelabuhan,
                 "nama_reviewer": nama,
@@ -416,16 +295,10 @@ def scrape_tempat(lokasi, nama_pelabuhan, url, output):
                 "scraped_at": SCRAPED_AT,
             })
 
-        except StaleElementReferenceException:
-            continue
         except Exception as e:
             print(f"Review ke-{i + 1} gagal diproses:", e)
 
-    print(f"-> {len(output) - jumlah_awal} review diambil.")
-
-    # Teruskan Ctrl+C ke proses utama setelah review tempat ini tersimpan
-    if dibatalkan:
-        raise KeyboardInterrupt
+    return hasil
 
 
 # =============================================================
@@ -433,63 +306,59 @@ def scrape_tempat(lokasi, nama_pelabuhan, url, output):
 # =============================================================
 
 data_review = []
-dibatalkan = False
 
-try:
-    siapkan_login()
+for lokasi, targets in PELABUHAN.items():
 
-    for lokasi, targets in PELABUHAN.items():
+    print("\n" + "=" * 60)
+    print(f"LOKASI: {lokasi}")
+    print("=" * 60)
 
-        print("\n" + "=" * 60)
-        print(f"LOKASI: {lokasi}")
-        print("=" * 60)
+    for target in targets:
 
-        for target in targets:
+        print(f"\nPelabuhan: {target['nama']}")
+        print(f"URL      : {target['url']}")
 
-            print(f"\nPelabuhan: {target['nama']}")
-            print(f"URL      : {target['url']}")
-
-            try:
-                scrape_tempat(lokasi, target["nama"], target["url"], data_review)
-            except Exception as e:
-                # Satu link gagal tidak menghentikan seluruh proses
-                print(f"GAGAL memproses {target['nama']}: {e}")
-
-except KeyboardInterrupt:
-    dibatalkan = True
-    print("\n\nDihentikan dengan Ctrl+C.")
+        try:
+            hasil = scrape_tempat(lokasi, target["nama"], target["url"])
+            data_review.extend(hasil)
+            print(f"-> {len(hasil)} review diambil.")
+        except Exception as e:
+            # Satu link gagal tidak menghentikan seluruh proses
+            print(f"GAGAL memproses {target['nama']}: {e}")
 
 
 # =============================================================
-# SIMPAN KE CSV (nama file selalu baru, tidak menimpa file lama)
+# SIMPAN KE CSV
 # =============================================================
+
+KOLOM = [
+    "lokasi", "pelabuhan", "nama_reviewer", "rating", "tanggal",
+    "review", "has_photo", "is_localguide", "scraped_at",
+]
+
+df = pd.DataFrame(data_review, columns=KOLOM)
+
+# Beberapa link bisa mengarah ke tempat yang sama, buang review duplikat
+jumlah_sebelum = len(df)
+df = df.drop_duplicates(
+    subset=["lokasi", "nama_reviewer", "rating", "review"],
+    keep="first"
+)
+print(f"\nDuplikat dibuang: {jumlah_sebelum - len(df)}")
+
+folder_raw = "data/raw"
+os.makedirs(folder_raw, exist_ok=True)
+
+nama_file = "review_pelabuhan.csv"
+path_file = os.path.join(folder_raw, nama_file)
+
+df.to_csv(path_file, index=False, encoding="utf-8-sig")
 
 print("\n" + "=" * 80)
-
-if data_review:
-    if dibatalkan:
-        nama_file = f"review_cancel_{STAMP_RUN}.csv"
-    else:
-        nama_file = f"review_pelabuhan_{STAMP_RUN}.csv"
-
-    jumlah, path_file = simpan_csv(data_review, nama_file)
-
-    print("DATA BERHASIL DISIMPAN!" if not dibatalkan
-          else "DATA SEBAGIAN DISIMPAN (proses dibatalkan).")
-    print("Jumlah data :", jumlah)
-    print("Nama file   :", path_file)
-else:
-    print("Tidak ada data yang berhasil diambil, tidak ada file dibuat.")
-
+print("DATA BERHASIL DISIMPAN!")
+print("Jumlah data :", len(df))
+print("Nama file   :", path_file)
 print("=" * 80)
 
-if not dibatalkan:
-    try:
-        input("\nTekan Enter untuk keluar...")
-    except KeyboardInterrupt:
-        pass
-
-try:
-    driver.quit()
-except Exception:
-    pass
+input("\nTekan Enter untuk keluar...")
+driver.quit()
