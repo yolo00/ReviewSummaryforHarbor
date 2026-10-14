@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Analisis Sentimen Pelabuhan</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        .card { border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); }
+        .badge-positif { background-color: #198754; color: white; }
+        .badge-negatif { background-color: #dc3545; color: white; }
+        .badge-netral { background-color: #ffc107; color: black; }
+    </style>
+</head>
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow-sm">
+        <div class="container">
+            <a class="navbar-brand fw-bold" href="#">
+                <i class="fa-solid fa-ship me-2"></i> Sentimen Pelabuhan Batam
+            </a>
+        </div>
+    </nav>
+
+    <div class="container my-4">
+
+        <!-- Panel Kontrol Alur Kerja (Workflow Controls) -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div class="card p-3 text-center">
+                    <h5>1. Scraping Data</h5>
+                    <p class="text-muted small">Ambil ulasan terbaru dari Google Maps</p>
+                    <button id="btnScrape" class="btn btn-outline-primary" onclick="triggerScrape()">
+                        <i class="fa-solid fa-download me-1"></i> Mulai Scraping
+                    </button>
+                    <div id="statusScraping" class="mt-2 text-secondary small">Belum berjalan</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card p-3 text-center">
+                    <h5>2. Preprocessing NLP</h5>
+                    <p class="text-muted small">Filter bahasa, pembersihan & stemming</p>
+                    <button id="btnPreprocess" class="btn btn-outline-success" onclick="triggerPreprocess()">
+                        <i class="fa-solid fa-gears me-1"></i> Jalankan Preprocessing
+                    </button>
+                    <div id="statusPreprocessing" class="mt-2 text-secondary small">Belum berjalan</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card p-3 text-center">
+                    <h5>3. Training Model</h5>
+                    <p class="text-muted small">Latih model SVM & TF-IDF Pipeline</p>
+                    <button id="btnTrain" class="btn btn-outline-warning" onclick="triggerTrain()">
+                        <i class="fa-solid fa-brain me-1"></i> Latih Model SVM
+                    </button>
+                    <div id="statusTraining" class="mt-2 text-secondary small">Belum berjalan</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Uji Coba Prediksi Teks Tunggal -->
+        <div class="card p-4 mb-4">
+            <h5 class="card-title mb-3"><i class="fa-solid fa-flask text-primary me-2"></i>Uji Coba Prediksi Sentimen (Real-time)</h5>
+            <div class="input-group mb-3">
+                <input type="text" id="inputReview" class="form-control" placeholder="Masukkan ulasan ulasan contoh, misal: Pelayanan di pelabuhan sangat cepat dan bersih!">
+                <button class="btn btn-primary" onclick="predictSingleText()">
+                    <i class="fa-solid fa-magnifying-glass me-1"></i> Analisis Teks
+                </button>
+            </div>
+            <div id="singleResult" class="d-none alert alert-info mb-0"></div>
+        </div>
+
+        <!-- Section Statistik & Visualisasi Chart -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <div class="card p-4 h-100">
+                    <h5 class="card-title"><i class="fa-solid fa-chart-pie text-success me-2"></i>Distribusi Sentimen</h5>
+                    <div style="height: 260px;">
+                        <canvas id="sentimentChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card p-4 h-100">
+                    <h5 class="card-title"><i class="fa-solid fa-table text-info me-2"></i>Ringkasan Data</h5>
+                    <ul class="list-group list-group-flush mt-3">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Total Ulasan Terdaftar
+                            <span id="totalReviews" class="badge bg-primary rounded-pill">0</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Sentimen Positif
+                            <span id="totalPositif" class="badge bg-success rounded-pill">0</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Sentimen Negatif
+                            <span id="totalNegatif" class="badge bg-danger rounded-pill">0</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Sentimen Netral
+                            <span id="totalNetral" class="badge bg-warning text-dark rounded-pill">0</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tabel Data Hasil Ulasan -->
+        <div class="card p-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="card-title mb-0"><i class="fa-solid fa-list-check text-secondary me-2"></i>Daftar Ulasan Pelabuhan</h5>
+                <button class="btn btn-sm btn-outline-secondary" onclick="loadTableData()">
+                    <i class="fa-solid fa-arrows-rotate me-1"></i> Refresh Tabel
+                </button>
+            </div>
+            <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light sticky-top">
+                        <tr>
+                            <th>#</th>
+                            <th>Pelabuhan</th>
+                            <th>Ulasan Original</th>
+                            <th>Hasil Prediksi Sentimen</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody">
+                        <tr>
+                            <td colspan="4" class="text-center text-muted">Belum ada data ulasan yang dimuat.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+    let sentimentChart = null;
+
+    // Inisialisasi awal saat halaman dibuka
+    document.addEventListener("DOMContentLoaded", () => {
+        checkProcessStatus();
+        loadTableData();
+        // Checking status secara periodik tiap 4 detik
+        setInterval(checkProcessStatus, 4000);
+    });
+
+    // 1. Cek Status Background Process di Flask
+    async function checkProcessStatus() {
+        try {
+            const res = await fetch("/status");
+            const data = await res.json();
+
+            updateStatusUI("statusScraping", "btnScrape", data.scraping);
+            updateStatusUI("statusPreprocessing", "btnPreprocess", data.preprocessing);
+            updateStatusUI("statusTraining", "btnTrain", data.training);
+        } catch (err) {
+            console.error("Gagal memeriksa status:", err);
+        }
+    }
+
+    function updateStatusUI(elementId, buttonId, statusObj) {
+        const el = document.getElementById(elementId);
+        const btn = document.getElementById(buttonId);
+
+        if (!el || !btn) return;
+
+        el.innerText = statusObj.message;
+        if (statusObj.running) {
+            btn.disabled = true;
+            el.className = "mt-2 text-primary fw-bold small";
+        } else {
+            btn.disabled = false;
+            el.className = statusObj.success ? "mt-2 text-success small" : "mt-2 text-muted small";
+        }
+    }
+
+    // 2. Trigger Endpoints (Scrape, Preprocess, Train)
+    async function triggerScrape() {
+        await fetch("/run-scraper", { method: "POST" });
+        checkProcessStatus();
+    }
+
+    async function triggerPreprocess() {
+        await fetch("/run-preprocessing", { method: "POST" });
+        checkProcessStatus();
+    }
+
+    async function triggerTrain() {
+        await fetch("/train-model", { method: "POST" });
+        checkProcessStatus();
+    }
+
+    // 3. Load Data Ulasan ke Tabel & Update Chart
+    async function loadTableData() {
+        try {
+            const res = await fetch("/get-data");
+            const result = await res.json();
+
+            const tbody = document.getElementById("tableBody");
+            tbody.innerHTML = "";
+
+            if (result.status !== "success" || !result.data || result.data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Belum ada data ulasan.</td></tr>`;
+                updateSummaryCounts(0, 0, 0, 0);
+                updateChart(0, 0, 0);
+                return;
+            }
+
+            let countPos = 0, countNeg = 0, countNet = 0;
+
+            result.data.forEach((row, index) => {
+                // PERBAIKAN 1: Normalisasi string sentimen ke Uppercase
+                const rawSentiment = (row.sentiment || "").toString().trim().toUpperCase();
+                let sentimentDisplay = rawSentiment || "BELUM DIPREDIKSI";
+                let badgeClass = "bg-secondary";
+
+                if (rawSentiment === "POSITIF") {
+                    badgeClass = "badge-positif bg-success";
+                    countPos++;
+                } else if (rawSentiment === "NEGATIF") {
+                    badgeClass = "badge-negatif bg-danger";
+                    countNeg++;
+                } else if (rawSentiment === "NETRAL") {
+                    badgeClass = "badge-netral bg-warning text-dark";
+                    countNet++;
+                }
+
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td><span class="fw-bold">${row.pelabuhan || "-"}</span></td>
+                    <td>${row.review || row.final_text || "-"}</td>
+                    <td><span class="badge ${badgeClass}">${sentimentDisplay}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            const total = result.total || result.data.length;
+            updateSummaryCounts(total, countPos, countNeg, countNet);
+            updateChart(countPos, countNeg, countNet);
+
+        } catch (err) {
+            console.error("Gagal memuat data tabel:", err);
+        }
+    }
+
+    // Helper fungsi untuk update ringkasan angka elemen UI
+    function updateSummaryCounts(total, pos, neg, net) {
+        const elTotal = document.getElementById("totalReviews") || document.getElementById("total-reviews");
+        const elPos = document.getElementById("totalPositif") || document.getElementById("pos-reviews");
+        const elNeg = document.getElementById("totalNegatif") || document.getElementById("neg-reviews");
+        const elNet = document.getElementById("totalNetral") || document.getElementById("net-reviews");
+
+        if (elTotal) elTotal.innerText = total;
+        if (elPos) elPos.innerText = pos;
+        if (elNeg) elNeg.innerText = neg;
+        if (elNet) elNet.innerText = net;
+    }
+
+    // 4. Update Pie Chart
+    function updateChart(pos, neg, net) {
+        const chartElem = document.getElementById("sentimentChart");
+        if (!chartElem) return;
+
+        const ctx = chartElem.getContext("2d");
+
+        if (sentimentChart) {
+            sentimentChart.destroy();
+        }
+
+        sentimentChart = new Chart(ctx, {
+            type: "pie",
+            data: {
+                labels: ["Positif", "Negatif", "Netral"],
+                datasets: [{
+                    data: [pos, neg, net],
+                    backgroundColor: ["#198754", "#dc3545", "#ffc107"]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    }
+
+    // 5. Prediksi Teks Tunggal
+    async function predictSingleText() {
+        const textInput = document.getElementById("inputReview").value.trim();
+        const resultDiv = document.getElementById("singleResult");
+
+        if (!textInput) {
+            alert("Silakan masukkan teks ulasan terlebih dahulu!");
+            return;
+        }
+
+        try {
+            const res = await fetch("/predict-single", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: textInput })
+            });
+
+            const data = await res.json();
+            resultDiv.classList.remove("d-none");
+
+            if (data.status === "success") {
+                // PERBAIKAN 2: Format tampilan probabilitas ke bentuk Persentase (%) yang rapi
+                let probFormatted = "";
+                if (data.probabilities) {
+                    probFormatted = Object.entries(data.probabilities)
+                        .map(([key, val]) => `<b>${key}:</b> ${(val * 100).toFixed(1)}%`)
+                        .join(" | ");
+                }
+
+                resultDiv.className = "alert alert-success mb-0 mt-3";
+                resultDiv.innerHTML = `
+                    <strong>Hasil Prediksi:</strong> <span class="badge bg-dark">${data.prediction}</span><br>
+                    <small class="text-muted">Probabilitas: ${probFormatted}</small>
+                `;
+            } else {
+                resultDiv.className = "alert alert-danger mb-0 mt-3";
+                resultDiv.innerHTML = `<strong>Error:</strong> ${data.message}`;
+            }
+        } catch (err) {
+            console.error("Gagal memprediksi:", err);
+        }
+    }
+</script>
+</body>
+</html>
