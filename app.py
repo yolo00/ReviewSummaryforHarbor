@@ -7,7 +7,7 @@ from flask import Flask, render_template, jsonify, request
 from modules.scraper import run_scraper
 from modules.preprocessing import run_preprocessing_job
 from modules.train_model import train_svm_model
-from modules.predict import SVMSentimentAnalyzer
+from modules.predict import SVMSentimentAnalyzer, run_analysis_job
 
 app = Flask(__name__)
 
@@ -15,7 +15,8 @@ app = Flask(__name__)
 PROCESS_STATUS = {
     "scraping": {"running": False, "message": "Belum berjalan", "success": False},
     "preprocessing": {"running": False, "message": "Belum berjalan", "success": False},
-    "training": {"running": False, "message": "Belum berjalan", "success": False}
+    "training": {"running": False, "message": "Belum berjalan", "success": False},
+    "analysis": {"running": False, "message": "Belum berjalan", "success": False}
 }
 
 def update_status_callback(msg):
@@ -95,6 +96,29 @@ def train_model_endpoint():
     thread.start()
     return jsonify({"status": "success", "message": "Pelatihan model telah dimulai."})
 
+# 4b. Endpoint Analisis Sentimen (buat review_predicted.csv)
+@app.route("/run-analysis", methods=["POST"])
+def run_analysis_endpoint():
+    if PROCESS_STATUS["analysis"]["running"]:
+        return jsonify({"status": "error", "message": "Proses analisis sedang berjalan..."}), 400
+
+    def background_analysis():
+        PROCESS_STATUS["analysis"]["running"] = True
+        PROCESS_STATUS["analysis"]["success"] = False
+        PROCESS_STATUS["analysis"]["message"] = "Analisis sentimen sedang berlangsung..."
+        try:
+            success, msg = run_analysis_job()
+            PROCESS_STATUS["analysis"]["message"] = msg
+            PROCESS_STATUS["analysis"]["success"] = success
+        except Exception as e:
+            PROCESS_STATUS["analysis"]["message"] = f"Analisis gagal: {str(e)}"
+            PROCESS_STATUS["analysis"]["success"] = False
+        finally:
+            PROCESS_STATUS["analysis"]["running"] = False
+
+    threading.Thread(target=background_analysis, daemon=True).start()
+    return jsonify({"status": "success", "message": "Analisis sentimen telah dimulai."})
+
 # 5. Endpoint Cek Status Running
 @app.route("/status", methods=["GET"])
 def check_status():
@@ -105,7 +129,7 @@ def check_status():
 def get_data():
     predicted_path = os.path.join("data", "processed", "review_predicted.csv")
     processed_path = os.path.join("data", "processed", "review_processed.csv")
-    raw_path = os.path.join("data", "raw", "review_pelabuhan1.csv")
+    raw_path = os.path.join("data", "raw", "review_pelabuhan.csv")
 
     if os.path.exists(predicted_path):
         df = pd.read_csv(predicted_path)
@@ -141,6 +165,15 @@ def get_data():
         "data": df.to_dict(orient="records"), 
         "summary": summary
     })
+
+    # 6b. Endpoint Rekap per Pelabuhan
+    @app.route("/get-recap", methods=["GET"])
+    def get_recap():
+        recap_path = os.path.join("data", "processed", "rekap_sentimen_pelabuhan.csv")
+        if not os.path.exists(recap_path):
+            return jsonify({"status": "error", "data": []})
+        df = pd.read_csv(recap_path).fillna("")
+    return jsonify({"status": "success", "data": df.to_dict(orient="records")})
 
 # 7. Endpoint Prediksi Teks Tunggal
 @app.route("/predict-single", methods=["POST"])

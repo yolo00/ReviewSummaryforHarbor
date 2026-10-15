@@ -33,7 +33,7 @@
 
         <!-- Panel Kontrol Alur Kerja (Workflow Controls) -->
         <div class="row g-3 mb-4">
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="card p-3 text-center">
                     <h5>1. Scraping Data</h5>
                     <p class="text-muted small">Ambil ulasan terbaru dari Google Maps</p>
@@ -43,7 +43,7 @@
                     <div id="statusScraping" class="mt-2 text-secondary small">Belum berjalan</div>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="card p-3 text-center">
                     <h5>2. Preprocessing NLP</h5>
                     <p class="text-muted small">Filter bahasa, pembersihan & stemming</p>
@@ -53,7 +53,7 @@
                     <div id="statusPreprocessing" class="mt-2 text-secondary small">Belum berjalan</div>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="card p-3 text-center">
                     <h5>3. Training Model</h5>
                     <p class="text-muted small">Latih model SVM & TF-IDF Pipeline</p>
@@ -63,11 +63,21 @@
                     <div id="statusTraining" class="mt-2 text-secondary small">Belum berjalan</div>
                 </div>
             </div>
+            <div class="col-md-3">
+                <div class="card p-3 text-center">
+                    <h5>4. Analisis Data</h5>
+                    <p class="text-muted small">Proses Analisis Sentimen</p>
+                    <button id="btnAnalysis" class="btn btn-outline-primary" onclick="triggerPredict()">
+                        <i class="fa-solid fa-brain me-1"></i> Mulai Analisis
+                    </button>
+                    <div id="statusAnalysis" class="mt-2 text-secondary small">Belum berjalan</div>
+                </div>
+            </div>
         </div>
 
         <!-- Uji Coba Prediksi Teks Tunggal -->
         <div class="card p-4 mb-4">
-            <h5 class="card-title mb-3"><i class="fa-solid fa-flask text-primary me-2"></i>Uji Coba Prediksi Sentimen (Real-time)</h5>
+            <h5 class="card-title mb-3"><i class="fa-solid fa-flask text-primary me-2"></i>Uji Coba Prediksi Sentimen</h5>
             <div class="input-group mb-3">
                 <input type="text" id="inputReview" class="form-control" placeholder="Masukkan ulasan ulasan contoh, misal: Pelayanan di pelabuhan sangat cepat dan bersih!">
                 <button class="btn btn-primary" onclick="predictSingleText()">
@@ -164,6 +174,7 @@
             updateStatusUI("statusScraping", "btnScrape", data.scraping);
             updateStatusUI("statusPreprocessing", "btnPreprocess", data.preprocessing);
             updateStatusUI("statusTraining", "btnTrain", data.training);
+            updateStatusUI("statusAnalysis", "btnAnalysis", data.analysis);
         } catch (err) {
             console.error("Gagal memeriksa status:", err);
         }
@@ -198,6 +209,11 @@
 
     async function triggerTrain() {
         await fetch("/train-model", { method: "POST" });
+        checkProcessStatus();
+    }
+
+    async function triggerPredict() {
+        await fetch("/run-analysis", { method: "POST" });
         checkProcessStatus();
     }
 
