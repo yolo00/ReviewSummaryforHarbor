@@ -13,13 +13,13 @@ MODEL_DIR = os.path.join("data", "models")
 
 def train_svm_model():
     print("=" * 50)
-    print("🚀 MEMULAI PELATIHAN MODEL SVM & TF-IDF 🚀")
+    print("MEMULAI PELATIHAN MODEL SVM & TF-IDF")
     print("=" * 50)
 
     os.makedirs(MODEL_DIR, exist_ok=True)
 
     if not os.path.exists(DATA_PATH):
-        print(f"❌ File {DATA_PATH} tidak ditemukan!")
+        print(f"File {DATA_PATH} tidak ditemukan!")
         return False, "File dataset tidak ditemukan. Jalankan preprocessing terlebih dahulu."
 
     df = pd.read_csv(DATA_PATH)
@@ -84,8 +84,8 @@ def train_svm_model():
     # 6. Simpan Objek Pipeline Tunggal
     model_path = os.path.join(MODEL_DIR, "svm_pipeline.pkl")
     joblib.dump(sentiment_pipeline, model_path)
-    
-    print(f"✅ Pipeline berhasil disimpan di: {model_path}")
+
+    print(f"Pipeline berhasil disimpan di: {model_path}")
     return True, "Pelatihan Model SVM dan TF-IDF Pipeline berhasil dilakukan!"
 
 

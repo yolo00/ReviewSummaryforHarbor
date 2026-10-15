@@ -11,13 +11,9 @@ from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.edge.options import Options as EdgeOptions
-from selenium.webdriver.edge.service import Service as EdgeService
 from selenium.webdriver.chrome.options import Options as ChromeOptions
-from selenium.webdriver.chrome.service import Service as ChromeService
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-from webdriver_manager.microsoft import EdgeChromiumDriverManager
-from webdriver_manager.chrome import ChromeDriverManager
 
 PELABUHAN = {
     "Batam Centre": [
@@ -51,7 +47,7 @@ PELABUHAN = {
     ]
 }
 
-JUMLAH_SCROLL = 2  # Ubah nilai ini jika ingin membatasi scroll manual
+JUMLAH_SCROLL = 25
 KATA_WAKTU = [
     "hari lalu", "minggu lalu", "bulan lalu", "tahun lalu",
     "hari yang lalu", "minggu yang lalu", "bulan yang lalu", "tahun yang lalu"
@@ -68,7 +64,7 @@ def init_driver():
         options.add_argument("--disable-blink-features=AutomationControlled")
         options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36")
         options.add_argument(f"--user-data-dir={tempfile.mkdtemp()}")
-        driver = webdriver.Chrome(service=ChromeService(ChromeDriverManager().install()), options=options)
+        driver = webdriver.Chrome(options=options)
     else:
         options = EdgeOptions()
         options.add_argument("--start-maximized")
@@ -76,10 +72,13 @@ def init_driver():
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
         options.add_experimental_option("useAutomationExtension", False)
 
+        # DIHAPUS: options.add_argument("--guest") agar tidak dipaksa jadi guest mode
+        options.add_argument("--disable-search-engine-choice-screen")
+
         scraper_profile_dir = os.path.join(os.path.expanduser("~"), "EdgeScraperProfile")
         options.add_argument(f"--user-data-dir={scraper_profile_dir}")
 
-        driver = webdriver.Edge(service=EdgeService(EdgeChromiumDriverManager().install()), options=options)
+        driver = webdriver.Edge(options=options)
 
     driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
     return driver
@@ -88,21 +87,18 @@ def bersihkan_review(teks):
     teks = re.sub(r"\b\d{1,2}:\d{2}\b", "", teks)
     teks = re.sub(r"[\ue000-\uf8ff]", "", teks)
     teks = re.sub(r"\+\d+(?:\s+\d+)?", "", teks)
-    teks = re.sub(r"\bLainnya\b", "", teks, flags=re.IGNORECASE)
+    teks = re.sub(r"\blihat ulasan lainnya\b", "", teks, flags=re.IGNORECASE)
+    teks = re.sub(r"\blainnya\b", "", teks, flags=re.IGNORECASE)
     teks = re.sub(r"^\s*BARU\s+", "", teks, flags=re.IGNORECASE)
     teks = teks.replace("…", "")
     teks = re.sub(r"\s+\d{1,2}\s*$", "", teks)
     return re.sub(r"\s+", " ", teks).strip()
 
 def bersihkan_tanggal(teks_tanggal):
-    """Membuang kata 'diedit' dan kurung dari teks tanggal."""
     if not teks_tanggal:
         return None
-    # 1. Hapus kata 'diedit'
     teks = re.sub(r'diedit', '', teks_tanggal, flags=re.IGNORECASE)
-    # 2. Hapus tanda kurung
     teks = re.sub(r'[\(\)]', '', teks)
-    # 3. Rapikan spasi
     return re.sub(r'\s+', ' ', teks).strip()
 
 def run_scraper(update_status_callback):
@@ -113,23 +109,25 @@ def run_scraper(update_status_callback):
     try:
         update_status_callback("Membuat sesi browser...")
         driver = init_driver()
-        wait = WebDriverWait(driver, 15)
+        wait = WebDriverWait(driver, 10)
 
         for lokasi, targets in PELABUHAN.items():
             for target in targets:
                 update_status_callback(f"Membuka {target['nama']}...")
                 driver.get(target["url"])
-                time.sleep(6)
+                time.sleep(5)
 
+                # 1. Hancurkan pop-up cookie / dialog jika muncul
                 try:
-                    cards = driver.find_elements(By.CSS_SELECTOR, "a.hfA8B, div.Nv2PK a")
-                    if cards:
-                        driver.execute_script("arguments[0].click();", cards[0])
-                        time.sleep(4)
+                    tutup_btns = driver.find_elements(By.XPATH, "//button[contains(., 'Setuju') or contains(., 'Tolak') or contains(., 'Lain kali') or contains(., 'Tutup')]")
+                    for btn in tutup_btns:
+                        if btn.is_displayed():
+                            driver.execute_script("arguments[0].click();", btn)
+                            time.sleep(1)
                 except Exception:
                     pass
 
-                # Buka Tab Ulasan
+                # 2. Buka Tab Ulasan
                 try:
                     xpath_tab = (
                         "//button[@role='tab' "
@@ -142,11 +140,22 @@ def run_scraper(update_status_callback):
                 except Exception:
                     pass
 
-                # Cari Panel Ulasan & Scroll
+                # 3. BARU: Klik tombol "Lihat ulasan lainnya (475)" jika Google Maps memunculkannya di halaman utama ulasan
+                try:
+                    btn_lihat_lainnya = driver.find_elements(By.XPATH, "//*[contains(text(), 'Lihat ulasan lainnya')]")
+                    for btn in btn_lihat_lainnya:
+                        if btn.is_displayed():
+                            driver.execute_script("arguments[0].click();", btn)
+                            time.sleep(3)
+                            break
+                except Exception:
+                    pass
+
+                # 4. Cari Panel Ulasan & Scroll
                 try:
                     panel = wait.until(
                         EC.presence_of_element_located(
-                            (By.XPATH, "//div[@aria-label='Saring ulasan']/ancestor::div[contains(@class, 'm6QErb')]")
+                            (By.XPATH, "//div[@aria-label='Saring ulasan']/ancestor::div[contains(@class, 'm6QErb')] | //div[contains(@class, 'm6QErb') and contains(@class, 'DshB1e')]")
                         )
                     )
                     ActionChains(driver).move_to_element(panel).click().perform()
@@ -156,9 +165,16 @@ def run_scraper(update_status_callback):
                         time.sleep(1.5)
                         update_status_callback(f"Scrolling {target['nama']} ({i+1}/{JUMLAH_SCROLL})")
                 except Exception:
-                    continue
+                    # Fallback scroll dengan JS
+                    try:
+                        panels = driver.find_elements(By.CSS_SELECTOR, "div.m6QErb")
+                        for p in panels:
+                            driver.execute_script("arguments[0].scrollTop += 1200;", p)
+                        time.sleep(1.5)
+                    except Exception:
+                        continue
 
-                # Buka Teks Ulasan Lengkap ("Lainnya")
+                # 5. Ekspansi teks ulasan yang terpotong ("Lainnya")
                 review_elements = driver.find_elements(By.CSS_SELECTOR, "div.jftiEf")
                 for r in review_elements:
                     try:
@@ -168,7 +184,7 @@ def run_scraper(update_status_callback):
                     except Exception:
                         pass
 
-                # Ekstraksi Data Review & Deteksi Foto
+                # 6. Ekstraksi Data Review
                 review_elements = driver.find_elements(By.CSS_SELECTOR, "div.jftiEf")
                 for review in review_elements:
                     try:
@@ -191,16 +207,14 @@ def run_scraper(update_status_callback):
                                 tanggal_raw = line
                                 break
 
-                        # Bersihkan kata '(diedit ...)' dari string tanggal
                         tanggal = bersihkan_tanggal(tanggal_raw)
 
                         teks_review = ""
                         if tanggal_raw and tanggal_raw in lines:
                             kandidat = lines[lines.index(tanggal_raw) + 1:]
-                            kandidat = [x for x in kandidat if x not in ["Suka", "Bagikan", "Lainnya"]]
+                            kandidat = [x for x in kandidat if x not in ["Suka", "Bagikan", "Lainnya", "Lihat ulasan lainnya"]]
                             teks_review = bersihkan_review(" ".join(kandidat))
 
-                        # Deteksi Foto
                         ada_foto = False
                         try:
                             foto_elements = review.find_elements(
@@ -212,16 +226,17 @@ def run_scraper(update_status_callback):
                         except Exception:
                             ada_foto = False
 
-                        data_review.append({
-                            "lokasi": lokasi,
-                            "pelabuhan": target["nama"],
-                            "nama_reviewer": nama,
-                            "rating": rating,
-                            "tanggal": tanggal,
-                            "review": teks_review,
-                            "ada_foto": ada_foto,
-                            "scraped_at": scraped_at
-                        })
+                        if teks_review:
+                            data_review.append({
+                                "lokasi": lokasi,
+                                "pelabuhan": target["nama"],
+                                "nama_reviewer": nama,
+                                "rating": rating,
+                                "tanggal": tanggal,
+                                "review": teks_review,
+                                "ada_foto": ada_foto,
+                                "scraped_at": scraped_at
+                            })
                     except Exception:
                         pass
 

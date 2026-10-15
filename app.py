@@ -7,7 +7,7 @@ from flask import Flask, render_template, jsonify, request
 from modules.scraper import run_scraper
 from modules.preprocessing import run_preprocessing_job
 from modules.train_model import train_svm_model
-from modules.predict import SVMSentimentAnalyzer
+from modules.predict import SVMSentimentAnalyzer, analyze_and_recap_harbors
 
 app = Flask(__name__)
 
@@ -15,7 +15,8 @@ app = Flask(__name__)
 PROCESS_STATUS = {
     "scraping": {"running": False, "message": "Belum berjalan", "success": False},
     "preprocessing": {"running": False, "message": "Belum berjalan", "success": False},
-    "training": {"running": False, "message": "Belum berjalan", "success": False}
+    "training": {"running": False, "message": "Belum berjalan", "success": False},
+    "predictBatch": {"running": False, "message": "Belum berjalan", "success": False}
 }
 
 def update_status_callback(msg):
@@ -95,12 +96,35 @@ def train_model_endpoint():
     thread.start()
     return jsonify({"status": "success", "message": "Pelatihan model telah dimulai."})
 
-# 5. Endpoint Cek Status Running
+# 5. Endpoint Analisis Massal (Dijalankan di Background)
+@app.route("/run-predict-batch", methods=["POST"])
+def run_predict_batch():
+    if PROCESS_STATUS["predictBatch"]["running"]:
+        return jsonify({"status": "error", "message": "Proses prediksi massal sedang berjalan..."}), 400
+
+    def background_predict():
+        PROCESS_STATUS["predictBatch"]["running"] = True
+        PROCESS_STATUS["predictBatch"]["message"] = "Memproses prediksi massal..."
+        try:
+            analyze_and_recap_harbors()
+            PROCESS_STATUS["predictBatch"]["message"] = "Selesai!"
+            PROCESS_STATUS["predictBatch"]["success"] = True
+        except Exception as e:
+            PROCESS_STATUS["predictBatch"]["message"] = f"Prediksi gagal: {str(e)}"
+            PROCESS_STATUS["predictBatch"]["success"] = False
+        finally:
+            PROCESS_STATUS["predictBatch"]["running"] = False
+
+    thread = threading.Thread(target=background_predict)
+    thread.start()
+    return jsonify({"status": "success", "message": "Prediksi massal dimulai di latar belakang."})
+
+# 6. Endpoint Cek Status Running
 @app.route("/status", methods=["GET"])
 def check_status():
     return jsonify(PROCESS_STATUS)
 
-# 6. Endpoint Ambil Data Tabel
+# 7. Endpoint Ambil Data Tabel
 @app.route("/get-data", methods=["GET"])
 def get_data():
     predicted_path = os.path.join("data", "processed", "review_predicted.csv")
@@ -122,7 +146,6 @@ def get_data():
 
     df = df.fillna("")
     
-    # Hitung ringkasan sentimen (abaikan huruf besar/kecil)
     summary = {
         "total": len(df),
         "positif": 0,
@@ -142,7 +165,7 @@ def get_data():
         "summary": summary
     })
 
-# 7. Endpoint Prediksi Teks Tunggal
+# 8. Endpoint Prediksi Teks Tunggal
 @app.route("/predict-single", methods=["POST"])
 def predict_single():
     req = request.get_json() or {}
@@ -152,7 +175,6 @@ def predict_single():
         return jsonify({"status": "error", "message": "Teks tidak boleh kosong."}), 400
 
     try:
-        # PERBAIKAN BUG: Menggunakan nama class yang benar
         analyzer = SVMSentimentAnalyzer()
         prediction, probs = analyzer.predict_single(text)
         return jsonify({
@@ -163,6 +185,7 @@ def predict_single():
         })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

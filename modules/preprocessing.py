@@ -97,7 +97,7 @@ class TextPreprocessor:
 
 
 def run_preprocessing_job():
-    raw_path = os.path.join("data", "raw", "review_pelabuhan.csv")
+    raw_path = os.path.join("data", "raw", "review_pelabuhan1.csv")
     out_dir = os.path.join("data", "processed")
     out_path = os.path.join(out_dir, "review_processed.csv")
 

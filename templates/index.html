@@ -10,13 +10,9 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <style>
-        body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
-        .card { border-radius: 12px; border: none; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); }
-        .badge-positif { background-color: #198754; color: white; }
-        .badge-negatif { background-color: #dc3545; color: white; }
-        .badge-netral { background-color: #ffc107; color: black; }
-    </style>
+
+    <!-- Custom CSS dari folder static -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
 
@@ -31,36 +27,46 @@
 
     <div class="container my-4">
 
-        <!-- Panel Kontrol Alur Kerja (Workflow Controls) -->
+        <!-- Panel Kontrol Alur Kerja (Workflow Controls - 4 Kolom) -->
         <div class="row g-3 mb-4">
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="card p-3 text-center">
-                    <h5>1. Scraping Data</h5>
-                    <p class="text-muted small">Ambil ulasan terbaru dari Google Maps</p>
+                    <h5>1. Scraping</h5>
+                    <p class="text-muted small">Ambil ulasan terbaru</p>
                     <button id="btnScrape" class="btn btn-outline-primary" onclick="triggerScrape()">
-                        <i class="fa-solid fa-download me-1"></i> Mulai Scraping
+                        <i class="fa-solid fa-download me-1"></i> Mulai
                     </button>
                     <div id="statusScraping" class="mt-2 text-secondary small">Belum berjalan</div>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="card p-3 text-center">
-                    <h5>2. Preprocessing NLP</h5>
-                    <p class="text-muted small">Filter bahasa, pembersihan & stemming</p>
+                    <h5>2. Preprocessing</h5>
+                    <p class="text-muted small">Filter & pembersihan</p>
                     <button id="btnPreprocess" class="btn btn-outline-success" onclick="triggerPreprocess()">
-                        <i class="fa-solid fa-gears me-1"></i> Jalankan Preprocessing
+                        <i class="fa-solid fa-gears me-1"></i> Jalankan
                     </button>
                     <div id="statusPreprocessing" class="mt-2 text-secondary small">Belum berjalan</div>
                 </div>
             </div>
-            <div class="col-md-4">
+            <div class="col-md-3">
                 <div class="card p-3 text-center">
                     <h5>3. Training Model</h5>
-                    <p class="text-muted small">Latih model SVM & TF-IDF Pipeline</p>
+                    <p class="text-muted small">Latih model SVM</p>
                     <button id="btnTrain" class="btn btn-outline-warning" onclick="triggerTrain()">
-                        <i class="fa-solid fa-brain me-1"></i> Latih Model SVM
+                        <i class="fa-solid fa-brain me-1"></i> Latih AI
                     </button>
                     <div id="statusTraining" class="mt-2 text-secondary small">Belum berjalan</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card p-3 text-center">
+                    <h5>4. Analisis Massal</h5>
+                    <p class="text-muted small">Prediksi semua ulasan</p>
+                    <button id="btnPredictBatch" class="btn btn-outline-info" onclick="triggerPredictBatch()">
+                        <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Prediksi
+                    </button>
+                    <div id="statusPredictBatch" class="mt-2 text-secondary small">Belum berjalan</div>
                 </div>
             </div>
         </div>
@@ -69,7 +75,7 @@
         <div class="card p-4 mb-4">
             <h5 class="card-title mb-3"><i class="fa-solid fa-flask text-primary me-2"></i>Uji Coba Prediksi Sentimen (Real-time)</h5>
             <div class="input-group mb-3">
-                <input type="text" id="inputReview" class="form-control" placeholder="Masukkan ulasan ulasan contoh, misal: Pelayanan di pelabuhan sangat cepat dan bersih!">
+                <input type="text" id="inputReview" class="form-control" placeholder="Masukkan ulasan contoh, misal: Pelayanan di pelabuhan sangat cepat dan bersih!">
                 <button class="btn btn-primary" onclick="predictSingleText()">
                     <i class="fa-solid fa-magnifying-glass me-1"></i> Analisis Teks
                 </button>
@@ -116,10 +122,23 @@
         <div class="card p-4">
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <h5 class="card-title mb-0"><i class="fa-solid fa-list-check text-secondary me-2"></i>Daftar Ulasan Pelabuhan</h5>
-                <button class="btn btn-sm btn-outline-secondary" onclick="loadTableData()">
-                    <i class="fa-solid fa-arrows-rotate me-1"></i> Refresh Tabel
-                </button>
+                
+                <!-- Filter Pelabuhan & Tombol Refresh -->
+                <div class="d-flex gap-2">
+                    <select id="filterPelabuhan" class="form-select form-select-sm" style="width: 200px;" onchange="applyPelabuhanFilter()">
+                        <option value="ALL">Semua Pelabuhan</option>
+                        <option value="Batam Centre">Batam Centre</option>
+                        <option value="Harbour Bay">Harbour Bay</option>
+                        <option value="Telaga Punggur">Telaga Punggur</option>
+                        <option value="Nongsapura">Nongsapura</option>
+                        <option value="Sekupang">Sekupang</option>
+                    </select>
+                    <button class="btn btn-sm btn-outline-secondary" onclick="loadTableData()">
+                        <i class="fa-solid fa-arrows-rotate me-1"></i> Refresh
+                    </button>
+                </div>
             </div>
+            
             <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
                 <table class="table table-hover align-middle">
                     <thead class="table-light sticky-top">
@@ -144,199 +163,8 @@
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-    <script>
-    let sentimentChart = null;
+    <!-- Custom JS dari folder static -->
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
 
-    // Inisialisasi awal saat halaman dibuka
-    document.addEventListener("DOMContentLoaded", () => {
-        checkProcessStatus();
-        loadTableData();
-        // Checking status secara periodik tiap 4 detik
-        setInterval(checkProcessStatus, 4000);
-    });
-
-    // 1. Cek Status Background Process di Flask
-    async function checkProcessStatus() {
-        try {
-            const res = await fetch("/status");
-            const data = await res.json();
-
-            updateStatusUI("statusScraping", "btnScrape", data.scraping);
-            updateStatusUI("statusPreprocessing", "btnPreprocess", data.preprocessing);
-            updateStatusUI("statusTraining", "btnTrain", data.training);
-        } catch (err) {
-            console.error("Gagal memeriksa status:", err);
-        }
-    }
-
-    function updateStatusUI(elementId, buttonId, statusObj) {
-        const el = document.getElementById(elementId);
-        const btn = document.getElementById(buttonId);
-
-        if (!el || !btn) return;
-
-        el.innerText = statusObj.message;
-        if (statusObj.running) {
-            btn.disabled = true;
-            el.className = "mt-2 text-primary fw-bold small";
-        } else {
-            btn.disabled = false;
-            el.className = statusObj.success ? "mt-2 text-success small" : "mt-2 text-muted small";
-        }
-    }
-
-    // 2. Trigger Endpoints (Scrape, Preprocess, Train)
-    async function triggerScrape() {
-        await fetch("/run-scraper", { method: "POST" });
-        checkProcessStatus();
-    }
-
-    async function triggerPreprocess() {
-        await fetch("/run-preprocessing", { method: "POST" });
-        checkProcessStatus();
-    }
-
-    async function triggerTrain() {
-        await fetch("/train-model", { method: "POST" });
-        checkProcessStatus();
-    }
-
-    // 3. Load Data Ulasan ke Tabel & Update Chart
-    async function loadTableData() {
-        try {
-            const res = await fetch("/get-data");
-            const result = await res.json();
-
-            const tbody = document.getElementById("tableBody");
-            tbody.innerHTML = "";
-
-            if (result.status !== "success" || !result.data || result.data.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Belum ada data ulasan.</td></tr>`;
-                updateSummaryCounts(0, 0, 0, 0);
-                updateChart(0, 0, 0);
-                return;
-            }
-
-            let countPos = 0, countNeg = 0, countNet = 0;
-
-            result.data.forEach((row, index) => {
-                // PERBAIKAN 1: Normalisasi string sentimen ke Uppercase
-                const rawSentiment = (row.sentiment || "").toString().trim().toUpperCase();
-                let sentimentDisplay = rawSentiment || "BELUM DIPREDIKSI";
-                let badgeClass = "bg-secondary";
-
-                if (rawSentiment === "POSITIF") {
-                    badgeClass = "badge-positif bg-success";
-                    countPos++;
-                } else if (rawSentiment === "NEGATIF") {
-                    badgeClass = "badge-negatif bg-danger";
-                    countNeg++;
-                } else if (rawSentiment === "NETRAL") {
-                    badgeClass = "badge-netral bg-warning text-dark";
-                    countNet++;
-                }
-
-                const tr = document.createElement("tr");
-                tr.innerHTML = `
-                    <td>${index + 1}</td>
-                    <td><span class="fw-bold">${row.pelabuhan || "-"}</span></td>
-                    <td>${row.review || row.final_text || "-"}</td>
-                    <td><span class="badge ${badgeClass}">${sentimentDisplay}</span></td>
-                `;
-                tbody.appendChild(tr);
-            });
-
-            const total = result.total || result.data.length;
-            updateSummaryCounts(total, countPos, countNeg, countNet);
-            updateChart(countPos, countNeg, countNet);
-
-        } catch (err) {
-            console.error("Gagal memuat data tabel:", err);
-        }
-    }
-
-    // Helper fungsi untuk update ringkasan angka elemen UI
-    function updateSummaryCounts(total, pos, neg, net) {
-        const elTotal = document.getElementById("totalReviews") || document.getElementById("total-reviews");
-        const elPos = document.getElementById("totalPositif") || document.getElementById("pos-reviews");
-        const elNeg = document.getElementById("totalNegatif") || document.getElementById("neg-reviews");
-        const elNet = document.getElementById("totalNetral") || document.getElementById("net-reviews");
-
-        if (elTotal) elTotal.innerText = total;
-        if (elPos) elPos.innerText = pos;
-        if (elNeg) elNeg.innerText = neg;
-        if (elNet) elNet.innerText = net;
-    }
-
-    // 4. Update Pie Chart
-    function updateChart(pos, neg, net) {
-        const chartElem = document.getElementById("sentimentChart");
-        if (!chartElem) return;
-
-        const ctx = chartElem.getContext("2d");
-
-        if (sentimentChart) {
-            sentimentChart.destroy();
-        }
-
-        sentimentChart = new Chart(ctx, {
-            type: "pie",
-            data: {
-                labels: ["Positif", "Negatif", "Netral"],
-                datasets: [{
-                    data: [pos, neg, net],
-                    backgroundColor: ["#198754", "#dc3545", "#ffc107"]
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false
-            }
-        });
-    }
-
-    // 5. Prediksi Teks Tunggal
-    async function predictSingleText() {
-        const textInput = document.getElementById("inputReview").value.trim();
-        const resultDiv = document.getElementById("singleResult");
-
-        if (!textInput) {
-            alert("Silakan masukkan teks ulasan terlebih dahulu!");
-            return;
-        }
-
-        try {
-            const res = await fetch("/predict-single", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ text: textInput })
-            });
-
-            const data = await res.json();
-            resultDiv.classList.remove("d-none");
-
-            if (data.status === "success") {
-                // PERBAIKAN 2: Format tampilan probabilitas ke bentuk Persentase (%) yang rapi
-                let probFormatted = "";
-                if (data.probabilities) {
-                    probFormatted = Object.entries(data.probabilities)
-                        .map(([key, val]) => `<b>${key}:</b> ${(val * 100).toFixed(1)}%`)
-                        .join(" | ");
-                }
-
-                resultDiv.className = "alert alert-success mb-0 mt-3";
-                resultDiv.innerHTML = `
-                    <strong>Hasil Prediksi:</strong> <span class="badge bg-dark">${data.prediction}</span><br>
-                    <small class="text-muted">Probabilitas: ${probFormatted}</small>
-                `;
-            } else {
-                resultDiv.className = "alert alert-danger mb-0 mt-3";
-                resultDiv.innerHTML = `<strong>Error:</strong> ${data.message}`;
-            }
-        } catch (err) {
-            console.error("Gagal memprediksi:", err);
-        }
-    }
-</script>
 </body>
 </html>
