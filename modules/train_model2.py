@@ -1,3 +1,4 @@
+#Train ini menggunakan label sentimen yang udah dibuat pada csv
 import os
 
 import joblib
@@ -9,7 +10,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.svm import SVC
 
 # Ubah DATA_PATH jika file CSV berlabel kamu memakai nama lain
-DATA_PATH = os.path.join("data", "processed", "review_processed(4k,sentimen).csv")
+DATA_PATH = os.path.join("data", "processed", "review_processed(deepseek).csv")
 MODEL_DIR = os.path.join("data", "models")
 MODEL_PATH = os.path.join(MODEL_DIR, "svm_pipeline.pkl")
 
