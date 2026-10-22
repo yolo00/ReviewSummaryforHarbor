@@ -6,8 +6,10 @@ from flask import Flask, render_template, jsonify, request
 # Import modul dari folder modules
 from modules.scraper import run_scraper
 from modules.preprocessing import run_preprocessing_job
-from modules.train_model import train_svm_model
+from modules.train_model2 import train_svm_model, EVAL_PATH, TERMS_PATH
 from modules.predict import SVMSentimentAnalyzer, run_analysis_job
+from modules.model_report import load_json
+from modules.check_terms import save_top_terms
 
 app = Flask(__name__)
 
@@ -166,14 +168,41 @@ def get_data():
         "summary": summary
     })
 
-    # 6b. Endpoint Rekap per Pelabuhan
-    @app.route("/get-recap", methods=["GET"])
-    def get_recap():
-        recap_path = os.path.join("data", "processed", "rekap_sentimen_pelabuhan.csv")
-        if not os.path.exists(recap_path):
-            return jsonify({"status": "error", "data": []})
-        df = pd.read_csv(recap_path).fillna("")
+# 6b. Endpoint Rekap per Pelabuhan
+@app.route("/get-recap", methods=["GET"])
+def get_recap():
+    recap_path = os.path.join("data", "processed", "rekap_sentimen_pelabuhan.csv")
+    if not os.path.exists(recap_path):
+        return jsonify({"status": "error", "data": []})
+    df = pd.read_csv(recap_path).fillna("")
     return jsonify({"status": "success", "data": df.to_dict(orient="records")})
+
+# 6c. Endpoint Evaluasi Model (accuracy, precision, recall, f1, confusion matrix)
+@app.route("/get-evaluation", methods=["GET"])
+def get_evaluation():
+    report = load_json(EVAL_PATH)
+    if report is None:
+        return jsonify({
+            "status": "error",
+            "message": "Laporan evaluasi belum ada. Jalankan training model terlebih dahulu."
+        }), 404
+    return jsonify({"status": "success", "data": report})
+
+# 6d. Endpoint Istilah Penting / check_terms
+@app.route("/get-terms", methods=["GET"])
+def get_terms():
+    terms = load_json(TERMS_PATH)
+    if terms is None:
+        # Fallback: buat dari model yang sudah tersimpan (tanpa perlu training ulang)
+        try:
+            pipeline = SVMSentimentAnalyzer().pipeline
+            terms = save_top_terms(pipeline, TERMS_PATH)
+        except FileNotFoundError:
+            return jsonify({
+                "status": "error",
+                "message": "Model belum dilatih. Jalankan training model terlebih dahulu."
+            }), 404
+    return jsonify({"status": "success", "data": terms})
 
 # 7. Endpoint Prediksi Teks Tunggal
 @app.route("/predict-single", methods=["POST"])

@@ -9,10 +9,22 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.svm import SVC
 
+try:
+    from modules.check_terms import save_top_terms
+    from modules.model_report import save_evaluation
+except ModuleNotFoundError:  # dijalankan langsung dari folder modules
+    from check_terms import save_top_terms
+    from model_report import save_evaluation
+
 # Ubah DATA_PATH jika file CSV berlabel kamu memakai nama lain
 DATA_PATH = os.path.join("data", "processed", "review_processed(deepseek).csv")
 MODEL_DIR = os.path.join("data", "models")
 MODEL_PATH = os.path.join(MODEL_DIR, "svm_pipeline.pkl")
+
+# Lokasi file laporan model (dibaca oleh app.py)
+EVAL_PATH = os.path.join(MODEL_DIR, "evaluation.json")   # accuracy, precision, recall, f1, confusion matrix
+TERMS_PATH = os.path.join(MODEL_DIR, "top_terms.json")   # hasil check_terms (istilah paling berpengaruh)
+TOP_N_TERMS = 10
 
 LABELS = ["NEGATIF", "NETRAL", "POSITIF"]
 
@@ -153,6 +165,27 @@ def train_svm_model():
     # 8. Simpan pipeline
     joblib.dump(sentiment_pipeline, MODEL_PATH)
     print(f"\n✅ Pipeline berhasil disimpan di: {MODEL_PATH}")
+
+    # 9. Simpan evaluasi model ke file
+    save_evaluation(
+        y_test, y_pred, labels_present, EVAL_PATH,
+        extra={
+            "data_path": DATA_PATH,
+            "n_total": int(total_awal),
+            "n_train_data": int(len(X_train)),
+            "label_distribution": {k: int(v) for k, v in y.value_counts().items()},
+            "config": {
+                "test_size": 0.2, "random_state": 42,
+                "tfidf": {"ngram_range": [1, 2], "max_features": 5000, "sublinear_tf": True},
+                "svm": {"kernel": "linear", "C": 1.0, "class_weight": "balanced"},
+            },
+        },
+    )
+    print(f"✅ Evaluasi model disimpan di: {EVAL_PATH}")
+
+    # 10. Simpan hasil check_terms ke file
+    save_top_terms(sentiment_pipeline, TERMS_PATH, TOP_N_TERMS)
+    print(f"✅ Istilah penting (check_terms) disimpan di: {TERMS_PATH}")
     return True, "Pelatihan Model SVM dan TF-IDF Pipeline berhasil dilakukan!"
 
 
