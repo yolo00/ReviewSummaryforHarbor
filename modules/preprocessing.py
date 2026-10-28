@@ -150,18 +150,9 @@ class TextPreprocessor:
         df = df[df['final_text'].str.strip() != ''].reset_index(drop=True)
         return df
 
-
-<<<<<<< HEAD
 def run_preprocessing_job():
     raw_path = os.path.join("data", "raw", "review_pelabuhan1.csv")
     out_dir = os.path.join("data", "processed")
-=======
-def run_preprocessing_job(
-    raw_path=os.path.join("data", "raw", "review_pelabuhan.csv"),
-    out_dir=os.path.join("data", "processed"),
-    text_col='review',
-):
->>>>>>> 3793d247f5fe280643f8a4d22108d426cba196ab
     out_path = os.path.join(out_dir, "review_processed.csv")
 
     if not os.path.exists(raw_path):
