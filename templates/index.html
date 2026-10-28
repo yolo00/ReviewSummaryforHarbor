@@ -61,19 +61,28 @@
             </div>
             <div class="col-md-3">
                 <div class="card p-3 text-center">
+<<<<<<< HEAD
                     <h5>4. Analisis Massal</h5>
                     <p class="text-muted small">Prediksi semua ulasan</p>
                     <button id="btnPredictBatch" class="btn btn-outline-info" onclick="triggerPredictBatch()">
                         <i class="fa-solid fa-wand-magic-sparkles me-1"></i> Prediksi
                     </button>
                     <div id="statusPredictBatch" class="mt-2 text-secondary small">Belum berjalan</div>
+=======
+                    <h5>4. Analisis Data</h5>
+                    <p class="text-muted small">Proses Analisis Sentimen</p>
+                    <button id="btnAnalysis" class="btn btn-outline-primary" onclick="triggerPredict()">
+                        <i class="fa-solid fa-brain me-1"></i> Mulai Analisis
+                    </button>
+                    <div id="statusAnalysis" class="mt-2 text-secondary small">Belum berjalan</div>
+>>>>>>> e4c57059266eac6978c6f42f1dc0d17fbfd86bfc
                 </div>
             </div>
         </div>
 
         <!-- Uji Coba Prediksi Teks Tunggal -->
         <div class="card p-4 mb-4">
-            <h5 class="card-title mb-3"><i class="fa-solid fa-flask text-primary me-2"></i>Uji Coba Prediksi Sentimen (Real-time)</h5>
+            <h5 class="card-title mb-3"><i class="fa-solid fa-flask text-primary me-2"></i>Uji Coba Prediksi Sentimen</h5>
             <div class="input-group mb-3">
                 <input type="text" id="inputReview" class="form-control" placeholder="Masukkan ulasan contoh, misal: Pelayanan di pelabuhan sangat cepat dan bersih!">
                 <button class="btn btn-primary" onclick="predictSingleText()">
@@ -116,6 +125,31 @@
                     </ul>
                 </div>
             </div>
+        </div>
+
+        <!-- Evaluasi Model -->
+        <div class="card p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="card-title mb-0"><i class="fa-solid fa-chart-column text-primary me-2"></i>Evaluasi Model</h5>
+                <button class="btn btn-sm btn-outline-secondary" onclick="loadEvaluation()">
+                    <i class="fa-solid fa-arrows-rotate me-1"></i> Refresh
+                </button>
+            </div>
+            <div id="evalMeta" class="small text-muted mb-3"></div>
+            <div id="evalBody" class="text-muted">Memuat evaluasi model...</div>
+        </div>
+
+        <!-- Istilah Penting (check_terms) -->
+        <div class="card p-4 mb-4">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="card-title mb-0"><i class="fa-solid fa-spell-check text-success me-2"></i>Istilah Paling Berpengaruh (Check Terms)</h5>
+                <button class="btn btn-sm btn-outline-secondary" onclick="loadTerms()">
+                    <i class="fa-solid fa-arrows-rotate me-1"></i> Refresh
+                </button>
+            </div>
+            <p class="small text-muted mb-3">Kata/frasa TF-IDF dengan bobot terbesar pada tiap pasangan kelas SVM (one-vs-one).</p>
+            <ul class="nav nav-pills mb-3" id="termsTabs"></ul>
+            <div id="termsBody" class="text-muted">Memuat istilah penting...</div>
         </div>
 
         <!-- Tabel Data Hasil Ulasan -->
@@ -163,8 +197,355 @@
     <!-- Bootstrap JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
+<<<<<<< HEAD
     <!-- Custom JS dari folder static -->
     <script src="{{ url_for('static', filename='script.js') }}"></script>
 
+=======
+    <script>
+    let sentimentChart = null;
+    let trainingWasRunning = false;
+
+    // Inisialisasi awal saat halaman dibuka
+    document.addEventListener("DOMContentLoaded", () => {
+        checkProcessStatus();
+        loadTableData();
+        loadEvaluation();
+        loadTerms();
+        // Checking status secara periodik tiap 4 detik
+        setInterval(checkProcessStatus, 4000);
+    });
+
+    // 1. Cek Status Background Process di Flask
+    async function checkProcessStatus() {
+        try {
+            const res = await fetch("/status");
+            const data = await res.json();
+
+            // Training baru selesai -> muat ulang evaluasi & istilah penting
+            if (trainingWasRunning && !data.training.running && data.training.success) {
+                loadEvaluation();
+                loadTerms();
+            }
+            trainingWasRunning = data.training.running;
+
+            updateStatusUI("statusScraping", "btnScrape", data.scraping);
+            updateStatusUI("statusPreprocessing", "btnPreprocess", data.preprocessing);
+            updateStatusUI("statusTraining", "btnTrain", data.training);
+            updateStatusUI("statusAnalysis", "btnAnalysis", data.analysis);
+        } catch (err) {
+            console.error("Gagal memeriksa status:", err);
+        }
+    }
+
+    function updateStatusUI(elementId, buttonId, statusObj) {
+        const el = document.getElementById(elementId);
+        const btn = document.getElementById(buttonId);
+
+        if (!el || !btn) return;
+
+        el.innerText = statusObj.message;
+        if (statusObj.running) {
+            btn.disabled = true;
+            el.className = "mt-2 text-primary fw-bold small";
+        } else {
+            btn.disabled = false;
+            el.className = statusObj.success ? "mt-2 text-success small" : "mt-2 text-muted small";
+        }
+    }
+
+    // 2. Trigger Endpoints (Scrape, Preprocess, Train)
+    async function triggerScrape() {
+        await fetch("/run-scraper", { method: "POST" });
+        checkProcessStatus();
+    }
+
+    async function triggerPreprocess() {
+        await fetch("/run-preprocessing", { method: "POST" });
+        checkProcessStatus();
+    }
+
+    async function triggerTrain() {
+        await fetch("/train-model", { method: "POST" });
+        checkProcessStatus();
+    }
+
+    async function triggerPredict() {
+        await fetch("/run-analysis", { method: "POST" });
+        checkProcessStatus();
+    }
+
+    // 3. Load Data Ulasan ke Tabel & Update Chart
+    async function loadTableData() {
+        try {
+            const res = await fetch("/get-data");
+            const result = await res.json();
+
+            const tbody = document.getElementById("tableBody");
+            tbody.innerHTML = "";
+
+            if (result.status !== "success" || !result.data || result.data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center text-muted">Belum ada data ulasan.</td></tr>`;
+                updateSummaryCounts(0, 0, 0, 0);
+                updateChart(0, 0, 0);
+                return;
+            }
+
+            let countPos = 0, countNeg = 0, countNet = 0;
+
+            result.data.forEach((row, index) => {
+                // PERBAIKAN 1: Normalisasi string sentimen ke Uppercase
+                const rawSentiment = (row.sentiment || "").toString().trim().toUpperCase();
+                let sentimentDisplay = rawSentiment || "BELUM DIPREDIKSI";
+                let badgeClass = "bg-secondary";
+
+                if (rawSentiment === "POSITIF") {
+                    badgeClass = "badge-positif bg-success";
+                    countPos++;
+                } else if (rawSentiment === "NEGATIF") {
+                    badgeClass = "badge-negatif bg-danger";
+                    countNeg++;
+                } else if (rawSentiment === "NETRAL") {
+                    badgeClass = "badge-netral bg-warning text-dark";
+                    countNet++;
+                }
+
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td><span class="fw-bold">${row.pelabuhan || "-"}</span></td>
+                    <td>${row.review || row.final_text || "-"}</td>
+                    <td><span class="badge ${badgeClass}">${sentimentDisplay}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            const total = result.total || result.data.length;
+            updateSummaryCounts(total, countPos, countNeg, countNet);
+            updateChart(countPos, countNeg, countNet);
+
+        } catch (err) {
+            console.error("Gagal memuat data tabel:", err);
+        }
+    }
+
+    // Helper fungsi untuk update ringkasan angka elemen UI
+    function updateSummaryCounts(total, pos, neg, net) {
+        const elTotal = document.getElementById("totalReviews") || document.getElementById("total-reviews");
+        const elPos = document.getElementById("totalPositif") || document.getElementById("pos-reviews");
+        const elNeg = document.getElementById("totalNegatif") || document.getElementById("neg-reviews");
+        const elNet = document.getElementById("totalNetral") || document.getElementById("net-reviews");
+
+        if (elTotal) elTotal.innerText = total;
+        if (elPos) elPos.innerText = pos;
+        if (elNeg) elNeg.innerText = neg;
+        if (elNet) elNet.innerText = net;
+    }
+
+    // 4. Update Pie Chart
+    function updateChart(pos, neg, net) {
+        const chartElem = document.getElementById("sentimentChart");
+        if (!chartElem) return;
+
+        const ctx = chartElem.getContext("2d");
+
+        if (sentimentChart) {
+            sentimentChart.destroy();
+        }
+
+        sentimentChart = new Chart(ctx, {
+            type: "pie",
+            data: {
+                labels: ["Positif", "Negatif", "Netral"],
+                datasets: [{
+                    data: [pos, neg, net],
+                    backgroundColor: ["#198754", "#dc3545", "#ffc107"]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    }
+
+    // 5. Prediksi Teks Tunggal
+    async function predictSingleText() {
+        const textInput = document.getElementById("inputReview").value.trim();
+        const resultDiv = document.getElementById("singleResult");
+
+        if (!textInput) {
+            alert("Silakan masukkan teks ulasan terlebih dahulu!");
+            return;
+        }
+
+        try {
+            const res = await fetch("/predict-single", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text: textInput })
+            });
+
+            const data = await res.json();
+            resultDiv.classList.remove("d-none");
+
+            if (data.status === "success") {
+                // PERBAIKAN 2: Format tampilan probabilitas ke bentuk Persentase (%) yang rapi
+                let probFormatted = "";
+                if (data.probabilities) {
+                    probFormatted = Object.entries(data.probabilities)
+                        .map(([key, val]) => `<b>${key}:</b> ${(val * 100).toFixed(1)}%`)
+                        .join(" | ");
+                }
+
+                resultDiv.className = "alert alert-success mb-0 mt-3";
+                resultDiv.innerHTML = `
+                    <strong>Hasil Prediksi:</strong> <span class="badge bg-dark">${data.prediction}</span><br>
+                    <small class="text-muted">Probabilitas: ${probFormatted}</small>
+                `;
+            } else {
+                resultDiv.className = "alert alert-danger mb-0 mt-3";
+                resultDiv.innerHTML = `<strong>Error:</strong> ${data.message}`;
+            }
+        } catch (err) {
+            console.error("Gagal memprediksi:", err);
+        }
+    }
+
+    // 6. Evaluasi Model & Check Terms
+    const LABEL_COLOR = { POSITIF: "success", NEGATIF: "danger", NETRAL: "warning" };
+
+    function esc(v) {
+        return String(v).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+    }
+    const pct = v => (v * 100).toFixed(1) + "%";
+
+    async function loadEvaluation() {
+        const body = document.getElementById("evalBody");
+        const meta = document.getElementById("evalMeta");
+        try {
+            const res = await fetch("/get-evaluation");
+            const result = await res.json();
+            if (result.status !== "success") {
+                meta.innerText = "";
+                body.innerHTML = `<div class="alert alert-secondary mb-0">${esc(result.message || "Evaluasi belum tersedia.")}</div>`;
+                return;
+            }
+            const d = result.data;
+            const tgl = d.generated_at ? new Date(d.generated_at).toLocaleString("id-ID") : "-";
+            meta.innerText = `Dilatih: ${tgl} · Data uji: ${d.n_test} ulasan` +
+                (d.n_total ? ` · Total data: ${d.n_total}` : "");
+
+            const tile = (label, val, cls) => `
+                <div class="col-6 col-md-3">
+                    <div class="border rounded-3 p-3 text-center h-100">
+                        <div class="small text-muted">${label}</div>
+                        <div class="fs-3 fw-bold text-${cls}">${pct(val)}</div>
+                    </div>
+                </div>`;
+            const tiles = `<div class="row g-3 mb-4">
+                ${tile("Accuracy", d.accuracy, "primary")}
+                ${tile("Precision (macro)", d.macro_avg.precision, "success")}
+                ${tile("Recall (macro)", d.macro_avg.recall, "info")}
+                ${tile("F1-score (macro)", d.macro_avg.f1_score, "warning")}
+            </div>`;
+
+            // Tabel per kelas
+            let rows = d.labels.map(l => {
+                const m = d.per_class[l];
+                return `<tr>
+                    <td><span class="badge bg-${LABEL_COLOR[l] || "secondary"} ${l === "NETRAL" ? "text-dark" : ""}">${esc(l)}</span></td>
+                    <td>${pct(m.precision)}</td><td>${pct(m.recall)}</td><td>${pct(m.f1_score)}</td><td>${m.support}</td>
+                </tr>`;
+            }).join("");
+            const avgRow = (name, m) => `<tr class="table-light fw-semibold">
+                <td>${name}</td><td>${pct(m.precision)}</td><td>${pct(m.recall)}</td><td>${pct(m.f1_score)}</td><td>${d.n_test}</td></tr>`;
+            const perClass = `
+                <h6 class="mb-2">Metrik per Kelas</h6>
+                <div class="table-responsive">
+                <table class="table table-sm align-middle mb-0">
+                    <thead class="table-light"><tr><th>Kelas</th><th>Precision</th><th>Recall</th><th>F1-score</th><th>Support</th></tr></thead>
+                    <tbody>${rows}${avgRow("Macro avg", d.macro_avg)}${avgRow("Weighted avg", d.weighted_avg)}</tbody>
+                </table></div>`;
+
+            // Confusion matrix (warna = proporsi per baris aktual)
+            const cm = d.confusion_matrix;
+            const cmRows = cm.matrix.map((row, i) => {
+                const sum = row.reduce((a, b) => a + b, 0) || 1;
+                const cells = row.map((v, j) => {
+                    const a = (v / sum).toFixed(2);
+                    const diag = i === j;
+                    const bg = diag ? `rgba(25,135,84,${a})` : `rgba(220,53,69,${a})`;
+                    return `<td class="text-center fw-semibold" style="background:${bg}">${v}</td>`;
+                }).join("");
+                return `<tr><th class="table-light">${esc(cm.labels[i])}</th>${cells}</tr>`;
+            }).join("");
+            const confusion = `
+                <h6 class="mb-2">Confusion Matrix</h6>
+                <div class="table-responsive">
+                <table class="table table-sm table-bordered align-middle mb-1">
+                    <thead class="table-light"><tr><th class="small text-muted">aktual \\ prediksi</th>
+                        ${cm.labels.map(l => `<th class="text-center">${esc(l)}</th>`).join("")}</tr></thead>
+                    <tbody>${cmRows}</tbody>
+                </table></div>
+                <div class="small text-muted">Baris = label aktual, kolom = prediksi. Hijau = benar, merah = salah.</div>`;
+
+            body.className = "";
+            body.innerHTML = tiles + `<div class="row g-4"><div class="col-lg-7">${perClass}</div><div class="col-lg-5">${confusion}</div></div>`;
+        } catch (err) {
+            console.error("Gagal memuat evaluasi:", err);
+            body.innerHTML = `<div class="alert alert-danger mb-0">Gagal memuat evaluasi model.</div>`;
+        }
+    }
+
+    let termsData = null;
+
+    async function loadTerms() {
+        const body = document.getElementById("termsBody");
+        const tabs = document.getElementById("termsTabs");
+        try {
+            const res = await fetch("/get-terms");
+            const result = await res.json();
+            if (result.status !== "success") {
+                tabs.innerHTML = "";
+                body.innerHTML = `<div class="alert alert-secondary mb-0">${esc(result.message || "Istilah belum tersedia.")}</div>`;
+                return;
+            }
+            termsData = result.data.pairs;
+            tabs.innerHTML = termsData.map((p, i) => `
+                <li class="nav-item">
+                    <button class="nav-link ${i === 0 ? "active" : ""}" onclick="showTermsPair(${i})">${esc(p.pair)}</button>
+                </li>`).join("");
+            showTermsPair(0);
+        } catch (err) {
+            console.error("Gagal memuat istilah:", err);
+            body.innerHTML = `<div class="alert alert-danger mb-0">Gagal memuat istilah penting.</div>`;
+        }
+    }
+
+    function showTermsPair(idx) {
+        if (!termsData) return;
+        document.querySelectorAll("#termsTabs .nav-link").forEach((b, i) => b.classList.toggle("active", i === idx));
+        const p = termsData[idx];
+        const col = (cls, items) => {
+            const color = LABEL_COLOR[cls] || "secondary";
+            const max = Math.max(...items.map(t => Math.abs(t.weight)), 1e-9);
+            const list = items.map((t, n) => `
+                <li class="list-group-item d-flex align-items-center gap-2 py-1">
+                    <span class="text-muted small" style="width:1.5rem">${n + 1}.</span>
+                    <span class="flex-grow-1">${esc(t.term)}</span>
+                    <div class="progress" style="width:90px;height:6px"><div class="progress-bar bg-${color}" style="width:${(Math.abs(t.weight) / max * 100).toFixed(0)}%"></div></div>
+                    <span class="small text-muted" style="width:3.2rem;text-align:right">${Math.abs(t.weight).toFixed(2)}</span>
+                </li>`).join("");
+            return `<div class="col-md-6">
+                <h6 class="mb-2">Condong ke <span class="badge bg-${color} ${cls === "NETRAL" ? "text-dark" : ""}">${esc(cls)}</span></h6>
+                <ul class="list-group list-group-flush">${list}</ul></div>`;
+        };
+        const body = document.getElementById("termsBody");
+        body.className = "";
+        body.innerHTML = `<div class="row g-4">${col(p.class_a, p.toward_a)}${col(p.class_b, p.toward_b)}</div>`;
+    }
+</script>
+>>>>>>> e4c57059266eac6978c6f42f1dc0d17fbfd86bfc
 </body>
 </html>

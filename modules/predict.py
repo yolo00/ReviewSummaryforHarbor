@@ -62,43 +62,56 @@ class SVMSentimentAnalyzer:
         return df
 
 
-def analyze_and_recap_harbors():
-    print("=" * 60)
-    print("🚢 ANALISIS & REKAPITULASI SENTIMEN PER PELABUHAN 🚢")
-    print("=" * 60)
-
-    input_csv = os.path.join("data", "processed", "review_processed.csv")
-    output_predicted_csv = os.path.join("data", "processed", "review_predicted.csv")
-    output_recap_csv = os.path.join("data", "processed", "rekap_sentimen_pelabuhan.csv")
-
+def run_analysis_job(
+    input_csv=os.path.join("data", "processed", "review_processed.csv"),
+    output_predicted_csv=os.path.join("data", "processed", "review_predicted.csv"),
+    output_recap_csv=os.path.join("data", "processed", "rekap_sentimen_pelabuhan.csv"),
+):
     if not os.path.exists(input_csv):
-        print(f"❌ File {input_csv} tidak ditemukan!")
-        return
+        return False, "Data preprocessing tidak ditemukan. Jalankan preprocessing terlebih dahulu."
 
-    df = pd.read_csv(input_csv)
+    try:
+        df = pd.read_csv(input_csv)
+    except Exception as e:
+        return False, f"Gagal membaca data preprocessing: {e}"
 
-    analyzer = SVMSentimentAnalyzer()
-    df_predicted = analyzer.process_dataframe(df, text_column="final_text")
+    if df.empty:
+        return False, "Data hasil preprocessing kosong."
 
-    df_predicted.to_csv(output_predicted_csv, index=False, encoding="utf-8-sig")
-    print(f"✅ Hasil prediksi berhasil disimpan di: {output_predicted_csv}\n")
+    try:
+        analyzer = SVMSentimentAnalyzer()
+    except FileNotFoundError:
+        return False, "Model belum dilatih. Jalankan training model terlebih dahulu."
 
-    rekap_pelabuhan = (
-        pd.crosstab(
-            df_predicted["pelabuhan"],
-            df_predicted["sentiment"],
-            margins=True,
-            margins_name="TOTAL",
-        )
-        .fillna(0)
-        .astype(int)
-    )
+    try:
+        df_predicted = analyzer.process_dataframe(df, text_column="final_text")
+        df_predicted.to_csv(output_predicted_csv, index=False, encoding="utf-8-sig")
 
-    print("=== 📊 REKAPITULASI SENTIMEN PER NAMA PELABUHAN ===")
-    print(rekap_pelabuhan)
+        msg = f"Analisis selesai! {len(df_predicted)} ulasan berhasil diberi label sentimen."
 
-    rekap_pelabuhan.to_csv(output_recap_csv)
-    print(f"\n✅ Tabel rekapitulasi berhasil disimpan di: {output_recap_csv}")
+        if "pelabuhan" in df_predicted.columns:
+            rekap = (
+                pd.crosstab(
+                    df_predicted["pelabuhan"],
+                    df_predicted["sentiment"],
+                    margins=True,
+                    margins_name="TOTAL",
+                )
+                .fillna(0)
+                .astype(int)
+            )
+            rekap.to_csv(output_recap_csv)
+        else:
+            msg += " (Rekap per pelabuhan dilewati: kolom 'pelabuhan' tidak ada.)"
+
+        return True, msg
+    except Exception as e:
+        return False, f"Analisis gagal: {e}"
+
+
+def analyze_and_recap_harbors():
+    success, msg = run_analysis_job()
+    print(("✅ " if success else "❌ ") + msg)
 
 
 if __name__ == "__main__":
