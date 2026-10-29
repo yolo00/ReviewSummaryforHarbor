@@ -3,7 +3,7 @@ import re
 import time
 import platform
 import tempfile
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
 
 from selenium import webdriver
@@ -48,10 +48,104 @@ PELABUHAN = {
 }
 
 JUMLAH_SCROLL = 25
-KATA_WAKTU = [
-    "hari lalu", "minggu lalu", "bulan lalu", "tahun lalu",
-    "hari yang lalu", "minggu yang lalu", "bulan yang lalu", "tahun yang lalu"
-]
+SCRAPED_AT_FORMAT = "%Y-%m-%d %H:%M:%S"
+
+# Nama bulan Indonesia (untuk parse tanggal absolut kalau Google menampilkannya)
+BULAN_ID = {
+    "januari": 1, "februari": 2, "maret": 3, "april": 4, "mei": 5, "juni": 6,
+    "juli": 7, "agustus": 8, "september": 9, "oktober": 10, "november": 11, "desember": 12,
+    "jan": 1, "feb": 2, "mar": 3, "apr": 4, "jun": 6, "jul": 7,
+    "agu": 8, "agt": 8, "sep": 9, "okt": 10, "nov": 11, "des": 12,
+}
+
+# --- BARU: parser label relatif Google Maps → tanggal absolut ---
+def parse_relative_date(label, base_dt=None):
+    """Konversi label tanggal Google Maps (relatif) ke datetime.date.
+
+    Contoh label: 'Baru', 'kemarin', '3 jam lalu', '2 minggu lalu',
+                  '5 bulan lalu', '1 tahun lalu', 'a week ago', '2 days ago',
+                  '12 Januari 2024'.
+    Mengembalikan datetime.date atau None.
+    """
+    if not label:
+        return None
+    if base_dt is None:
+        base_dt = datetime.now()
+
+    text = str(label).strip().lower()
+    text = re.sub(r"\bdiedit\b", "", text)
+    text = re.sub(r"[()]", "", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    if not text:
+        return None
+
+    # 1. Absolut: "12 Januari 2024" / "12 Jan 2024"
+    for name, num in BULAN_ID.items():
+        m = re.search(rf"(\d{{1,2}})\s+{name}\s+(\d{{4}})", text)
+        if m:
+            try:
+                return datetime(int(m.group(2)), num, int(m.group(1))).date()
+            except ValueError:
+                pass
+
+    # 2. "Baru" / "new" → hari ini
+    if text in ("baru", "new", "barusan"):
+        return base_dt.date()
+    if text in ("kemarin", "yesterday"):
+        return (base_dt - timedelta(days=1)).date()
+
+    # 3. English → Indonesia
+    en_to_id = {
+        "minute": "menit", "minutes": "menit",
+        "hour": "jam", "hours": "jam",
+        "day": "hari", "days": "hari",
+        "week": "minggu", "weeks": "minggu",
+        "month": "bulan", "months": "bulan",
+        "year": "tahun", "years": "tahun",
+    }
+    for en, idw in en_to_id.items():
+        text = re.sub(rf"\b{en}\b", idw, text)
+    text = re.sub(r"\ba\b|\ban\b", "1", text)
+    text = re.sub(r"\byesterday\b", "kemarin", text)
+    text = re.sub(r"\bago\b", "lalu", text)
+
+    # 4. Bentuk "se-" tanpa angka
+    text = re.sub(r"\bsehari\b", "1 hari", text)
+    text = re.sub(r"\bseminggu\b", "1 minggu", text)
+    text = re.sub(r"\bsebulan\b", "1 bulan", text)
+    text = re.sub(r"\bsetahun\b", "1 tahun", text)
+    text = re.sub(r"\bsejam\b", "1 jam", text)
+    text = re.sub(r"\bsemenit\b", "1 menit", text)
+    # "lebih dari setahun lalu" / "over a year ago"
+    text = re.sub(r"\blebih dari\b", "", text).strip()
+
+    m = re.search(r"(\d+)\s*(menit|jam|hari|minggu|bulan|tahun)", text)
+    if not m:
+        return None
+
+    n = int(m.group(1))
+    unit = m.group(2)
+    if unit == "menit":  return (base_dt - timedelta(minutes=n)).date()
+    if unit == "jam":    return (base_dt - timedelta(hours=n)).date()
+    if unit == "hari":   return (base_dt - timedelta(days=n)).date()
+    if unit == "minggu": return (base_dt - timedelta(weeks=n)).date()
+    if unit == "bulan":  return (base_dt - timedelta(days=n * 30)).date()
+    if unit == "tahun":  return (base_dt - timedelta(days=n * 365)).date()
+    return None
+
+
+# --- BARU: deteksi baris tanggal yang lebih tahan-banting ---
+def _is_date_line(line):
+    l = str(line).strip().lower()
+    if l in ("baru", "new", "kemarin", "yesterday"):
+        return True
+    keys = (
+        "menit lalu", "jam lalu", "hari lalu", "minggu lalu", "bulan lalu", "tahun lalu",
+        "hari yang lalu", "minggu yang lalu", "bulan yang lalu", "tahun yang lalu",
+        "sehari", "seminggu", "sebulan", "setahun",
+    )
+    return any(k in l for k in keys)
+
 
 def init_driver():
     if platform.system() == "Linux":
@@ -71,22 +165,40 @@ def init_driver():
         options.add_argument("--disable-blink-features=AutomationControlled")
         options.add_experimental_option("excludeSwitches", ["enable-automation"])
         options.add_experimental_option("useAutomationExtension", False)
-
-        # DIHAPUS: options.add_argument("--guest") agar tidak dipaksa jadi guest mode
         options.add_argument("--disable-search-engine-choice-screen")
-
         scraper_profile_dir = os.path.join(os.path.expanduser("~"), "EdgeScraperProfile")
         options.add_argument(f"--user-data-dir={scraper_profile_dir}")
-
         driver = webdriver.Edge(options=options)
 
     driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
     return driver
 
+
 def bersihkan_review(teks):
     teks = re.sub(r"\b\d{1,2}:\d{2}\b", "", teks)
     teks = re.sub(r"[\ue000-\uf8ff]", "", teks)
     teks = re.sub(r"\+\d+(?:\s+\d+)?", "", teks)
+
+    # --- FIX: hapus tombol UI Google Maps ---
+    ui_patterns = [
+        r"lihat terjemahan\s*\([^)]*\)",       # Lihat terjemahan (Indonesia)
+        r"lihat terjemahan\b",                  # Lihat terjemahan
+        r"lihat terjemahan lainnya\b",
+        r"terjemahkan ulasan ini\b",
+        r"see translation\s*\([^)]*\)",         # See translation (English)
+        r"see translation\b",
+        r"see original\s*\([^)]*\)",            # See original (Indonesian)
+        r"see original\b",
+        r"translated by google\b",
+        r"diterjemahkan oleh google\b",
+        r"\(translated by google\)",
+        r"\(diterjemahkan oleh google\)",
+        r"\(original\)",
+        r"\(asli\)",
+    ]
+    for pat in ui_patterns:
+        teks = re.sub(pat, " ", teks, flags=re.IGNORECASE)
+
     teks = re.sub(r"\blihat ulasan lainnya\b", "", teks, flags=re.IGNORECASE)
     teks = re.sub(r"\blainnya\b", "", teks, flags=re.IGNORECASE)
     teks = re.sub(r"^\s*BARU\s+", "", teks, flags=re.IGNORECASE)
@@ -94,17 +206,20 @@ def bersihkan_review(teks):
     teks = re.sub(r"\s+\d{1,2}\s*$", "", teks)
     return re.sub(r"\s+", " ", teks).strip()
 
+
 def bersihkan_tanggal(teks_tanggal):
     if not teks_tanggal:
         return None
-    teks = re.sub(r'diedit', '', teks_tanggal, flags=re.IGNORECASE)
-    teks = re.sub(r'[\(\)]', '', teks)
-    return re.sub(r'\s+', ' ', teks).strip()
+    teks = re.sub(r"diedit", "", teks_tanggal, flags=re.IGNORECASE)
+    teks = re.sub(r"[()]", "", teks)
+    return re.sub(r"\s+", " ", teks).strip()
+
 
 def run_scraper(update_status_callback):
     driver = None
     data_review = []
-    scraped_at = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    scraped_at_str = datetime.now().strftime(SCRAPED_AT_FORMAT)
+    scraped_at_dt = datetime.strptime(scraped_at_str, SCRAPED_AT_FORMAT)
 
     try:
         update_status_callback("Membuat sesi browser...")
@@ -117,9 +232,11 @@ def run_scraper(update_status_callback):
                 driver.get(target["url"])
                 time.sleep(5)
 
-                # 1. Hancurkan pop-up cookie / dialog jika muncul
                 try:
-                    tutup_btns = driver.find_elements(By.XPATH, "//button[contains(., 'Setuju') or contains(., 'Tolak') or contains(., 'Lain kali') or contains(., 'Tutup')]")
+                    tutup_btns = driver.find_elements(
+                        By.XPATH,
+                        "//button[contains(., 'Setuju') or contains(., 'Tolak') or contains(., 'Lain kali') or contains(., 'Tutup')]"
+                    )
                     for btn in tutup_btns:
                         if btn.is_displayed():
                             driver.execute_script("arguments[0].click();", btn)
@@ -127,7 +244,6 @@ def run_scraper(update_status_callback):
                 except Exception:
                     pass
 
-                # 2. Buka Tab Ulasan
                 try:
                     xpath_tab = (
                         "//button[@role='tab' "
@@ -140,7 +256,6 @@ def run_scraper(update_status_callback):
                 except Exception:
                     pass
 
-                # 3. BARU: Klik tombol "Lihat ulasan lainnya (475)" jika Google Maps memunculkannya di halaman utama ulasan
                 try:
                     btn_lihat_lainnya = driver.find_elements(By.XPATH, "//*[contains(text(), 'Lihat ulasan lainnya')]")
                     for btn in btn_lihat_lainnya:
@@ -151,7 +266,6 @@ def run_scraper(update_status_callback):
                 except Exception:
                     pass
 
-                # 4. Cari Panel Ulasan & Scroll
                 try:
                     panel = wait.until(
                         EC.presence_of_element_located(
@@ -159,13 +273,11 @@ def run_scraper(update_status_callback):
                         )
                     )
                     ActionChains(driver).move_to_element(panel).click().perform()
-
                     for i in range(JUMLAH_SCROLL):
                         ActionChains(driver).send_keys(Keys.PAGE_DOWN).perform()
                         time.sleep(1.5)
                         update_status_callback(f"Scrolling {target['nama']} ({i+1}/{JUMLAH_SCROLL})")
                 except Exception:
-                    # Fallback scroll dengan JS
                     try:
                         panels = driver.find_elements(By.CSS_SELECTOR, "div.m6QErb")
                         for p in panels:
@@ -174,7 +286,6 @@ def run_scraper(update_status_callback):
                     except Exception:
                         continue
 
-                # 5. Ekspansi teks ulasan yang terpotong ("Lainnya")
                 review_elements = driver.find_elements(By.CSS_SELECTOR, "div.jftiEf")
                 for r in review_elements:
                     try:
@@ -184,12 +295,11 @@ def run_scraper(update_status_callback):
                     except Exception:
                         pass
 
-                # 6. Ekstraksi Data Review
                 review_elements = driver.find_elements(By.CSS_SELECTOR, "div.jftiEf")
                 for review in review_elements:
                     try:
                         lines = [l.strip() for l in review.text.strip().split("\n") if l.strip()]
-                        
+
                         try:
                             nama = review.find_element(By.CSS_SELECTOR, ".d4r55").text.strip()
                         except Exception:
@@ -203,11 +313,18 @@ def run_scraper(update_status_callback):
 
                         tanggal_raw = None
                         for line in lines:
-                            if any(k in line.lower() for k in KATA_WAKTU):
+                            if _is_date_line(line):
                                 tanggal_raw = line
                                 break
 
                         tanggal = bersihkan_tanggal(tanggal_raw)
+
+                        # --- BARU: estimasi tanggal absolut ---
+                        tanggal_estimasi = None
+                        if tanggal:
+                            parsed = parse_relative_date(tanggal, scraped_at_dt)
+                            if parsed:
+                                tanggal_estimasi = parsed.isoformat()  # YYYY-MM-DD
 
                         teks_review = ""
                         if tanggal_raw and tanggal_raw in lines:
@@ -218,11 +335,10 @@ def run_scraper(update_status_callback):
                         ada_foto = False
                         try:
                             foto_elements = review.find_elements(
-                                By.CSS_SELECTOR, 
+                                By.CSS_SELECTOR,
                                 "button.KT3P4, button[data-photo-index], div.T7L23e, button[aria-label*='foto'], button[aria-label*='photo']"
                             )
-                            if len(foto_elements) > 0:
-                                ada_foto = True
+                            ada_foto = len(foto_elements) > 0
                         except Exception:
                             ada_foto = False
 
@@ -232,10 +348,11 @@ def run_scraper(update_status_callback):
                                 "pelabuhan": target["nama"],
                                 "nama_reviewer": nama,
                                 "rating": rating,
-                                "tanggal": tanggal,
+                                "tanggal": tanggal,                    # label asli
+                                "tanggal_estimasi": tanggal_estimasi,  # BARU: ISO date
                                 "review": teks_review,
                                 "ada_foto": ada_foto,
-                                "scraped_at": scraped_at
+                                "scraped_at": scraped_at_str,
                             })
                     except Exception:
                         pass
@@ -243,17 +360,17 @@ def run_scraper(update_status_callback):
         if data_review:
             df = pd.DataFrame(data_review)
             df = df.drop_duplicates(subset=["lokasi", "nama_reviewer", "rating", "review"], keep="first")
-            
+
             folder_raw = os.path.join("data", "raw")
             os.makedirs(folder_raw, exist_ok=True)
             path_file = os.path.join(folder_raw, "review_pelabuhan1.csv")
-            
+
             try:
                 df.to_csv(path_file, index=False, encoding="utf-8-sig")
                 return len(df), "Selesai! Data berhasil disimpan."
             except PermissionError:
                 return len(df), "Gagal menyimpan: Tutup dulu file 'review_pelabuhan1.csv' yang sedang terbuka di Excel!"
-        
+
         return 0, "Gagal mengambil data."
 
     finally:

@@ -6,15 +6,10 @@ from flask import Flask, render_template, jsonify, request
 # Import modul dari folder modules
 from modules.scraper import run_scraper
 from modules.preprocessing import run_preprocessing_job
-<<<<<<< HEAD
-from modules.train_model import train_svm_model
-from modules.predict import SVMSentimentAnalyzer, analyze_and_recap_harbors
-=======
 from modules.train_model2 import train_svm_model, EVAL_PATH, TERMS_PATH
 from modules.predict import SVMSentimentAnalyzer, run_analysis_job
 from modules.model_report import load_json
 from modules.check_terms import save_top_terms
->>>>>>> e4c57059266eac6978c6f42f1dc0d17fbfd86bfc
 
 app = Flask(__name__)
 
@@ -23,22 +18,31 @@ PROCESS_STATUS = {
     "scraping": {"running": False, "message": "Belum berjalan", "success": False},
     "preprocessing": {"running": False, "message": "Belum berjalan", "success": False},
     "training": {"running": False, "message": "Belum berjalan", "success": False},
-<<<<<<< HEAD
-    "predictBatch": {"running": False, "message": "Belum berjalan", "success": False}
-=======
     "analysis": {"running": False, "message": "Belum berjalan", "success": False}
->>>>>>> e4c57059266eac6978c6f42f1dc0d17fbfd86bfc
 }
 
 def update_status_callback(msg):
     PROCESS_STATUS["scraping"]["message"] = msg
 
-# 1. Dashboard Utama
+# ==========================================
+# ROUTES UNTUK HALAMAN (UI)
+# ==========================================
+
 @app.route("/")
 def index():
+    """Landing Page"""
     return render_template("index.html")
 
-# 2. Endpoint Scraping
+@app.route("/dashboard")
+def dashboard():
+    """Halaman Utama Dashboard"""
+    return render_template("dashboard.html")
+
+
+# ==========================================
+# ROUTES UNTUK PROSES PIPELINE (BACKEND)
+# ==========================================
+
 @app.route("/run-scraper", methods=["POST"])
 def run_scraper_endpoint():
     if PROCESS_STATUS["scraping"]["running"]:
@@ -57,11 +61,9 @@ def run_scraper_endpoint():
         finally:
             PROCESS_STATUS["scraping"]["running"] = False
 
-    thread = threading.Thread(target=background_scraping)
-    thread.start()
+    threading.Thread(target=background_scraping, daemon=True).start()
     return jsonify({"status": "success", "message": "Proses scraping telah dimulai di latar belakang."})
 
-# 3. Endpoint Preprocessing
 @app.route("/run-preprocessing", methods=["POST"])
 def run_preprocessing_endpoint():
     if PROCESS_STATUS["preprocessing"]["running"]:
@@ -80,11 +82,9 @@ def run_preprocessing_endpoint():
         finally:
             PROCESS_STATUS["preprocessing"]["running"] = False
 
-    thread = threading.Thread(target=background_preprocessing)
-    thread.start()
+    threading.Thread(target=background_preprocessing, daemon=True).start()
     return jsonify({"status": "success", "message": "Proses preprocessing telah dimulai."})
 
-# 4. Endpoint Training Model
 @app.route("/train-model", methods=["POST"])
 def train_model_endpoint():
     if PROCESS_STATUS["training"]["running"]:
@@ -103,37 +103,9 @@ def train_model_endpoint():
         finally:
             PROCESS_STATUS["training"]["running"] = False
 
-    thread = threading.Thread(target=background_training)
-    thread.start()
+    threading.Thread(target=background_training, daemon=True).start()
     return jsonify({"status": "success", "message": "Pelatihan model telah dimulai."})
 
-<<<<<<< HEAD
-# 5. Endpoint Analisis Massal (Dijalankan di Background)
-@app.route("/run-predict-batch", methods=["POST"])
-def run_predict_batch():
-    if PROCESS_STATUS["predictBatch"]["running"]:
-        return jsonify({"status": "error", "message": "Proses prediksi massal sedang berjalan..."}), 400
-
-    def background_predict():
-        PROCESS_STATUS["predictBatch"]["running"] = True
-        PROCESS_STATUS["predictBatch"]["message"] = "Memproses prediksi massal..."
-        try:
-            analyze_and_recap_harbors()
-            PROCESS_STATUS["predictBatch"]["message"] = "Selesai!"
-            PROCESS_STATUS["predictBatch"]["success"] = True
-        except Exception as e:
-            PROCESS_STATUS["predictBatch"]["message"] = f"Prediksi gagal: {str(e)}"
-            PROCESS_STATUS["predictBatch"]["success"] = False
-        finally:
-            PROCESS_STATUS["predictBatch"]["running"] = False
-
-    thread = threading.Thread(target=background_predict)
-    thread.start()
-    return jsonify({"status": "success", "message": "Prediksi massal dimulai di latar belakang."})
-
-# 6. Endpoint Cek Status Running
-=======
-# 4b. Endpoint Analisis Sentimen (buat review_predicted.csv)
 @app.route("/run-analysis", methods=["POST"])
 def run_analysis_endpoint():
     if PROCESS_STATUS["analysis"]["running"]:
@@ -156,18 +128,20 @@ def run_analysis_endpoint():
     threading.Thread(target=background_analysis, daemon=True).start()
     return jsonify({"status": "success", "message": "Analisis sentimen telah dimulai."})
 
-# 5. Endpoint Cek Status Running
->>>>>>> e4c57059266eac6978c6f42f1dc0d17fbfd86bfc
 @app.route("/status", methods=["GET"])
 def check_status():
     return jsonify(PROCESS_STATUS)
 
-# 7. Endpoint Ambil Data Tabel
+
+# ==========================================
+# ROUTES UNTUK DATA & VISUALISASI
+# ==========================================
+
 @app.route("/get-data", methods=["GET"])
 def get_data():
     predicted_path = os.path.join("data", "processed", "review_predicted.csv")
-    processed_path = os.path.join("data", "processed", "review_processed.csv")
-    raw_path = os.path.join("data", "raw", "review_pelabuhan.csv")
+    processed_path = os.path.join("data", "processed", "review_processed(deepseek).csv")
+    raw_path = os.path.join("data", "raw", "review_pelabuhan1.csv")
 
     if os.path.exists(predicted_path):
         df = pd.read_csv(predicted_path)
@@ -179,17 +153,12 @@ def get_data():
         return jsonify({
             "status": "error", 
             "data": [], 
-            "summary": {"total": 0, "positif": 0, "negatif": 0, "netral": 0}
+            "summary": {"total": 0, "positif": 0, "negatif": 0, "netral": 0, "avg_rating": 0}
         })
 
     df = df.fillna("")
     
-    summary = {
-        "total": len(df),
-        "positif": 0,
-        "negatif": 0,
-        "netral": 0
-    }
+    summary = {"total": len(df), "positif": 0, "negatif": 0, "netral": 0, "avg_rating": 0}
 
     if "sentiment" in df.columns:
         sentiment_counts = df["sentiment"].astype(str).str.upper().value_counts().to_dict()
@@ -197,53 +166,16 @@ def get_data():
         summary["negatif"] = sentiment_counts.get("NEGATIF", 0)
         summary["netral"] = sentiment_counts.get("NETRAL", 0)
 
+    if "rating" in df.columns:
+        ratings = pd.to_numeric(df["rating"].astype(str).str.extract(r'(\d+)')[0], errors='coerce')
+        summary["avg_rating"] = round(ratings.mean(), 1) if not ratings.isna().all() else 0
+
     return jsonify({
         "status": "success", 
         "data": df.to_dict(orient="records"), 
         "summary": summary
     })
 
-<<<<<<< HEAD
-# 8. Endpoint Prediksi Teks Tunggal
-=======
-# 6b. Endpoint Rekap per Pelabuhan
-@app.route("/get-recap", methods=["GET"])
-def get_recap():
-    recap_path = os.path.join("data", "processed", "rekap_sentimen_pelabuhan.csv")
-    if not os.path.exists(recap_path):
-        return jsonify({"status": "error", "data": []})
-    df = pd.read_csv(recap_path).fillna("")
-    return jsonify({"status": "success", "data": df.to_dict(orient="records")})
-
-# 6c. Endpoint Evaluasi Model (accuracy, precision, recall, f1, confusion matrix)
-@app.route("/get-evaluation", methods=["GET"])
-def get_evaluation():
-    report = load_json(EVAL_PATH)
-    if report is None:
-        return jsonify({
-            "status": "error",
-            "message": "Laporan evaluasi belum ada. Jalankan training model terlebih dahulu."
-        }), 404
-    return jsonify({"status": "success", "data": report})
-
-# 6d. Endpoint Istilah Penting / check_terms
-@app.route("/get-terms", methods=["GET"])
-def get_terms():
-    terms = load_json(TERMS_PATH)
-    if terms is None:
-        # Fallback: buat dari model yang sudah tersimpan (tanpa perlu training ulang)
-        try:
-            pipeline = SVMSentimentAnalyzer().pipeline
-            terms = save_top_terms(pipeline, TERMS_PATH)
-        except FileNotFoundError:
-            return jsonify({
-                "status": "error",
-                "message": "Model belum dilatih. Jalankan training model terlebih dahulu."
-            }), 404
-    return jsonify({"status": "success", "data": terms})
-
-# 7. Endpoint Prediksi Teks Tunggal
->>>>>>> e4c57059266eac6978c6f42f1dc0d17fbfd86bfc
 @app.route("/predict-single", methods=["POST"])
 def predict_single():
     req = request.get_json() or {}
@@ -263,6 +195,92 @@ def predict_single():
         })
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
+
+@app.route("/get-evaluation", methods=["GET"])
+def get_evaluation():
+    report = load_json(EVAL_PATH)
+    if report is None:
+        return jsonify({"status": "error", "message": "Laporan evaluasi belum ada."}), 404
+    return jsonify({"status": "success", "data": report})
+
+@app.route("/get-terms", methods=["GET"])
+def get_terms():
+    terms = load_json(TERMS_PATH)
+    if terms is None:
+        try:
+            pipeline = SVMSentimentAnalyzer().pipeline
+            terms = save_top_terms(pipeline, TERMS_PATH)
+        except FileNotFoundError:
+            return jsonify({"status": "error", "message": "Model belum dilatih."}), 404
+    return jsonify({"status": "success", "data": terms})
+
+
+# ==========================================
+# ENDPOINT VISUALISASI (HYBRID - 3 CHART PYTHON)
+# ==========================================
+@app.route("/api/charts", methods=["GET"])
+def get_charts():
+    """Hanya return 3 chart yang tidak bisa dibuat Chart.js."""
+    try:
+        from modules import visualization as viz
+    except ImportError as e:
+        return jsonify({"status": "error", "message": f"Gagal import: {e}. Pastikan matplotlib, seaborn, wordcloud sudah diinstall."}), 500
+
+    port = request.args.get("port", "ALL")
+    from_date = request.args.get("from", "").strip() or None
+    to_date = request.args.get("to", "").strip() or None
+
+    # Muat data
+    predicted_path = os.path.join("data", "processed", "review_predicted.csv")
+    deepseek_path  = os.path.join("data", "processed", "review_processed(deepseek).csv")
+    processed_path = os.path.join("data", "processed", "review_processed.csv")
+    raw_path       = os.path.join("data", "raw", "review_pelabuhan1.csv")
+
+    path = None
+    for p in (predicted_path, deepseek_path, processed_path, raw_path):
+        if os.path.exists(p):
+            path = p
+            break
+
+    if not path:
+        return jsonify({"status": "error", "message": "Tidak ada data"}), 404
+
+    try:
+        df = pd.read_csv(path).fillna("")
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)}), 500
+
+    # Filter pelabuhan & tanggal
+    if port != "ALL":
+        needle = port.lower()
+        mask = (
+            df.get("lokasi", pd.Series([""] * len(df))).astype(str).str.lower().str.contains(needle)
+            | df.get("pelabuhan", pd.Series([""] * len(df))).astype(str).str.lower().str.contains(needle)
+        )
+        df = df[mask]
+
+    if from_date or to_date:
+        if "tanggal_estimasi" in df.columns:
+            tgl = pd.to_datetime(df["tanggal_estimasi"], errors="coerce")
+        else:
+            tgl = pd.Series([pd.NaT] * len(df))
+        mask = tgl.notna()
+        if from_date:
+            mask &= tgl >= pd.to_datetime(from_date)
+        if to_date:
+            mask &= tgl <= pd.to_datetime(to_date)
+        df = df[mask]
+
+    try:
+        # Generate 3 Chart Python
+        charts = {
+            "wordcloud":         viz.chart_wordcloud(df),
+            "heatmap":           viz.chart_heatmap(df),
+            "confusion_matrix":  viz.chart_confusion_matrix(),
+        }
+        return jsonify({"status": "success", "charts": charts})
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Gagal membuat chart: {str(e)}"}), 500
 
 
 if __name__ == "__main__":
