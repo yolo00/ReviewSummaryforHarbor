@@ -1,9 +1,9 @@
 import os
 import threading
+import numpy as np
 import pandas as pd
 from flask import Flask, render_template, jsonify, request
 
-# Import modul dari folder modules
 from modules.scraper import run_scraper
 from modules.preprocessing import run_preprocessing_job
 from modules.train_model2 import train_svm_model, EVAL_PATH, TERMS_PATH
@@ -13,275 +13,256 @@ from modules.check_terms import save_top_terms
 
 app = Flask(__name__)
 
-# Status global untuk memantau proses background
+RAW_CANDIDATES = [
+    os.path.join("data", "raw", "review_pelabuhan(fix).csv"),
+    os.path.join("data", "raw", "review_pelabuhan1.csv"),
+    os.path.join("data", "raw", "review_pelabuhan.csv"),
+]
+PROCESSED_CANDIDATES = [
+    os.path.join("data", "processed", "review_predicted.csv"),
+    os.path.join("data", "processed", "review_processed(fix).csv"),
+    os.path.join("data", "processed", "review_processed.csv"),
+]
+
+def resolve_raw_path():
+    for p in RAW_CANDIDATES:
+        if os.path.exists(p): return p
+    return None
+
+def resolve_processed_path():
+    for p in PROCESSED_CANDIDATES:
+        if os.path.exists(p): return p
+    return None
+
+STATUS_LOCK = threading.Lock()
 PROCESS_STATUS = {
-    "scraping": {"running": False, "message": "Belum berjalan", "success": False},
+    "scraping":      {"running": False, "message": "Belum berjalan", "success": False},
     "preprocessing": {"running": False, "message": "Belum berjalan", "success": False},
-    "training": {"running": False, "message": "Belum berjalan", "success": False},
-    "analysis": {"running": False, "message": "Belum berjalan", "success": False}
+    "training":      {"running": False, "message": "Belum berjalan", "success": False},
+    "analysis":      {"running": False, "message": "Belum berjalan", "success": False},
 }
 
-def update_status_callback(msg):
-    PROCESS_STATUS["scraping"]["message"] = msg
+def try_start_process(name, start_message):
+    with STATUS_LOCK:
+        if PROCESS_STATUS[name]["running"]: return False
+        PROCESS_STATUS[name].update(running=True, success=False, message=start_message)
+        return True
 
-# ==========================================
-# ROUTES UNTUK HALAMAN (UI)
-# ==========================================
+def finish_process(name, success, message):
+    with STATUS_LOCK:
+        PROCESS_STATUS[name].update(running=False, success=bool(success), message=message)
+
+def update_status_callback(msg):
+    with STATUS_LOCK: PROCESS_STATUS["scraping"]["message"] = msg
+
+def _run_in_background(name, start_msg, job_fn, success_message):
+    if not try_start_process(name, start_msg):
+        return jsonify({"status": "error", "message": f"Proses {name} sedang berjalan..."}), 400
+    def worker():
+        try:
+            success, msg = job_fn()
+            finish_process(name, success, msg or success_message)
+        except Exception as e:
+            finish_process(name, False, f"{name} gagal: {e}")
+    threading.Thread(target=worker, daemon=True).start()
+    return jsonify({"status": "success", "message": f"Proses {name} telah dimulai di latar belakang."})
+
+ADMIN_TOKEN = os.environ.get("ADMIN_TOKEN", "").strip()
+def _require_admin():
+    if not ADMIN_TOKEN: return None
+    if request.headers.get("X-Admin-Token", "") != ADMIN_TOKEN:
+        return jsonify({"status": "error", "message": "Unauthorized"}), 401
+    return None
+
+def _to_jsonable(value):
+    if isinstance(value, np.integer): return int(value)
+    if isinstance(value, np.floating): return float(value)
+    if isinstance(value, np.bool_): return bool(value)
+    if value is None: return None
+    try:
+        if pd.isna(value): return None
+    except (TypeError, ValueError): pass
+    return value
+
+def df_records(df):
+    return [{k: _to_jsonable(v) for k, v in row.items()} for row in df.to_dict(orient="records")]
+
+def parse_ports_arg(ports_str):
+    if not ports_str: return []
+    return [p.strip() for p in ports_str.split(",") if p.strip()]
+
+def _resolve_ports_from_request():
+    ports = parse_ports_arg(request.args.get("ports", ""))
+    legacy = (request.args.get("port") or "").strip()
+    if not ports and legacy and legacy.upper() != "ALL": ports = [legacy]
+    return ports
+
+def apply_data_filters(df, ports, from_date, to_date):
+    if ports and len(ports) > 0:
+        mask = pd.Series(False, index=df.index)
+        for col in ("lokasi", "pelabuhan"):
+            if col in df.columns:
+                series = df[col].astype(str).str.lower()
+                for needle in ports:
+                    mask |= series.str.contains(needle.lower(), regex=False, na=False)
+        df = df[mask]
+
+    if from_date or to_date:
+        if "tanggal_estimasi" in df.columns:
+            tgl = pd.to_datetime(df["tanggal_estimasi"], errors="coerce")
+            mask = tgl.notna()
+            if from_date: mask &= tgl >= pd.to_datetime(from_date)
+            if to_date: mask &= tgl < (pd.to_datetime(to_date) + pd.Timedelta(days=1))
+            df = df[mask]
+    return df
 
 @app.route("/")
-def index():
-    """Landing Page"""
-    return render_template("index.html")
+def index(): return render_template("index.html")
 
 @app.route("/dashboard")
-def dashboard():
-    """Halaman Utama Dashboard"""
-    return render_template("dashboard.html")
-
-
-# ==========================================
-# ROUTES UNTUK PROSES PIPELINE (BACKEND)
-# ==========================================
+def dashboard(): return render_template("dashboard.html")
 
 @app.route("/run-scraper", methods=["POST"])
 def run_scraper_endpoint():
-    if PROCESS_STATUS["scraping"]["running"]:
-        return jsonify({"status": "error", "message": "Proses scraping sedang berjalan..."}), 400
-
-    def background_scraping():
-        PROCESS_STATUS["scraping"]["running"] = True
-        PROCESS_STATUS["scraping"]["message"] = "Scraping ulasan sedang berlangsung..."
-        try:
-            total, msg = run_scraper(update_status_callback)
-            PROCESS_STATUS["scraping"]["message"] = f"Selesai! {total} ulasan didapatkan."
-            PROCESS_STATUS["scraping"]["success"] = True if total > 0 else False
-        except Exception as e:
-            PROCESS_STATUS["scraping"]["message"] = f"Scraping gagal: {str(e)}"
-            PROCESS_STATUS["scraping"]["success"] = False
-        finally:
-            PROCESS_STATUS["scraping"]["running"] = False
-
-    threading.Thread(target=background_scraping, daemon=True).start()
-    return jsonify({"status": "success", "message": "Proses scraping telah dimulai di latar belakang."})
+    denied = _require_admin()
+    if denied: return denied
+    def job():
+        total, msg = run_scraper(update_status_callback)
+        return (True, f"Selesai! {total} ulasan didapatkan.") if total > 0 else (False, msg or "Scraping selesai tanpa ulasan.")
+    return _run_in_background("scraping", "Scraping ulasan sedang berlangsung...", job, "Scraping selesai.")
 
 @app.route("/run-preprocessing", methods=["POST"])
 def run_preprocessing_endpoint():
-    if PROCESS_STATUS["preprocessing"]["running"]:
-        return jsonify({"status": "error", "message": "Proses preprocessing sedang berjalan..."}), 400
-
-    def background_preprocessing():
-        PROCESS_STATUS["preprocessing"]["running"] = True
-        PROCESS_STATUS["preprocessing"]["message"] = "Preprocessing NLP sedang berlangsung..."
-        try:
-            success, msg = run_preprocessing_job()
-            PROCESS_STATUS["preprocessing"]["message"] = msg
-            PROCESS_STATUS["preprocessing"]["success"] = success
-        except Exception as e:
-            PROCESS_STATUS["preprocessing"]["message"] = f"Preprocessing gagal: {str(e)}"
-            PROCESS_STATUS["preprocessing"]["success"] = False
-        finally:
-            PROCESS_STATUS["preprocessing"]["running"] = False
-
-    threading.Thread(target=background_preprocessing, daemon=True).start()
-    return jsonify({"status": "success", "message": "Proses preprocessing telah dimulai."})
+    denied = _require_admin()
+    if denied: return denied
+    return _run_in_background("preprocessing", "Preprocessing NLP sedang berlangsung...", run_preprocessing_job, "Preprocessing selesai.")
 
 @app.route("/train-model", methods=["POST"])
 def train_model_endpoint():
-    if PROCESS_STATUS["training"]["running"]:
-        return jsonify({"status": "error", "message": "Pelatihan model sedang berjalan..."}), 400
-
-    def background_training():
-        PROCESS_STATUS["training"]["running"] = True
-        PROCESS_STATUS["training"]["message"] = "Pelatihan model SVM & TF-IDF sedang berlangsung..."
-        try:
-            success, msg = train_svm_model()
-            PROCESS_STATUS["training"]["message"] = msg
-            PROCESS_STATUS["training"]["success"] = success
-        except Exception as e:
-            PROCESS_STATUS["training"]["message"] = f"Training gagal: {str(e)}"
-            PROCESS_STATUS["training"]["success"] = False
-        finally:
-            PROCESS_STATUS["training"]["running"] = False
-
-    threading.Thread(target=background_training, daemon=True).start()
-    return jsonify({"status": "success", "message": "Pelatihan model telah dimulai."})
+    denied = _require_admin()
+    if denied: return denied
+    return _run_in_background("training", "Pelatihan model SVM & TF-IDF sedang berlangsung...", train_svm_model, "Pelatihan selesai.")
 
 @app.route("/run-analysis", methods=["POST"])
 def run_analysis_endpoint():
-    if PROCESS_STATUS["analysis"]["running"]:
-        return jsonify({"status": "error", "message": "Proses analisis sedang berjalan..."}), 400
-
-    def background_analysis():
-        PROCESS_STATUS["analysis"]["running"] = True
-        PROCESS_STATUS["analysis"]["success"] = False
-        PROCESS_STATUS["analysis"]["message"] = "Analisis sentimen sedang berlangsung..."
-        try:
-            success, msg = run_analysis_job()
-            PROCESS_STATUS["analysis"]["message"] = msg
-            PROCESS_STATUS["analysis"]["success"] = success
-        except Exception as e:
-            PROCESS_STATUS["analysis"]["message"] = f"Analisis gagal: {str(e)}"
-            PROCESS_STATUS["analysis"]["success"] = False
-        finally:
-            PROCESS_STATUS["analysis"]["running"] = False
-
-    threading.Thread(target=background_analysis, daemon=True).start()
-    return jsonify({"status": "success", "message": "Analisis sentimen telah dimulai."})
+    denied = _require_admin()
+    if denied: return denied
+    return _run_in_background("analysis", "Analisis sentimen sedang berlangsung...", run_analysis_job, "Analisis selesai.")
 
 @app.route("/status", methods=["GET"])
 def check_status():
-    return jsonify(PROCESS_STATUS)
-
-
-# ==========================================
-# ROUTES UNTUK DATA & VISUALISASI
-# ==========================================
+    with STATUS_LOCK: snapshot = {k: dict(v) for k, v in PROCESS_STATUS.items()}
+    return jsonify(snapshot)
 
 @app.route("/get-data", methods=["GET"])
 def get_data():
-    predicted_path = os.path.join("data", "processed", "review_predicted.csv")
-    processed_path = os.path.join("data", "processed", "review_processed(deepseek).csv")
-    raw_path = os.path.join("data", "raw", "review_pelabuhan1.csv")
+    source = (request.args.get("source") or "all").lower()
+    ports = _resolve_ports_from_request()
+    from_date = (request.args.get("from") or "").strip() or None
+    to_date = (request.args.get("to") or "").strip() or None
 
-    if os.path.exists(predicted_path):
-        df = pd.read_csv(predicted_path)
-    elif os.path.exists(processed_path):
-        df = pd.read_csv(processed_path)
-    elif os.path.exists(raw_path):
-        df = pd.read_csv(raw_path)
-    else:
-        return jsonify({
-            "status": "error", 
-            "data": [], 
-            "summary": {"total": 0, "positif": 0, "negatif": 0, "netral": 0, "avg_rating": 0}
-        })
+    result = {"status": "success"}
 
-    df = df.fillna("")
-    
-    summary = {"total": len(df), "positif": 0, "negatif": 0, "netral": 0, "avg_rating": 0}
+    if source in ("all", "raw"):
+        raw_path = resolve_raw_path()
+        if raw_path:
+            try:
+                df_raw = pd.read_csv(raw_path).fillna("")
+                df_raw = apply_data_filters(df_raw, ports, from_date, to_date)
+                result["raw"] = df_records(df_raw)
+                result["raw_meta"] = {"source": os.path.basename(raw_path), "count": int(len(df_raw))}
+            except Exception as e:
+                result["raw"] = []
+                result["raw_error"] = f"Gagal membaca raw CSV: {e}"
+        else:
+            result["raw"], result["raw_error"] = [], "CSV raw tidak ditemukan."
 
-    if "sentiment" in df.columns:
-        sentiment_counts = df["sentiment"].astype(str).str.upper().value_counts().to_dict()
-        summary["positif"] = sentiment_counts.get("POSITIF", 0)
-        summary["negatif"] = sentiment_counts.get("NEGATIF", 0)
-        summary["netral"] = sentiment_counts.get("NETRAL", 0)
+    if source in ("all", "processed"):
+        proc_path = resolve_processed_path()
+        if proc_path:
+            try:
+                df_proc = pd.read_csv(proc_path).fillna("")
+                df_proc = apply_data_filters(df_proc, ports, from_date, to_date)
+                result["processed"] = df_records(df_proc)
+                result["processed_meta"] = {"source": os.path.basename(proc_path), "count": int(len(df_proc))}
+                if "sentiment" not in df_proc.columns and "sentimen" not in df_proc.columns:
+                    result["warning"] = "Processed CSV belum memiliki kolom sentimen; jalankan prediksi terlebih dahulu."
+            except Exception as e:
+                result["processed"] = []
+                result["processed_error"] = f"Gagal membaca processed CSV: {e}"
+        else:
+            result["processed"], result["processed_error"] = [], "CSV processed tidak ditemukan."
 
-    if "rating" in df.columns:
-        ratings = pd.to_numeric(df["rating"].astype(str).str.extract(r'(\d+)')[0], errors='coerce')
-        summary["avg_rating"] = round(ratings.mean(), 1) if not ratings.isna().all() else 0
+    result["data"] = result.get("processed") or result.get("raw") or []
+    return jsonify(result)
 
-    return jsonify({
-        "status": "success", 
-        "data": df.to_dict(orient="records"), 
-        "summary": summary
-    })
+_analyzer = None
+_analyzer_lock = threading.Lock()
+def get_analyzer():
+    global _analyzer
+    if _analyzer is None:
+        with _analyzer_lock:
+            if _analyzer is None: _analyzer = SVMSentimentAnalyzer()
+    return _analyzer
 
 @app.route("/predict-single", methods=["POST"])
 def predict_single():
-    req = request.get_json() or {}
-    text = req.get("text", "").strip()
-
-    if not text:
-        return jsonify({"status": "error", "message": "Teks tidak boleh kosong."}), 400
-
+    req = request.get_json(silent=True) or {}
+    text = req.get("text", "")
+    if not isinstance(text, str) or not text.strip(): return jsonify({"status": "error", "message": "Masukkan teks ulasan yang valid."}), 400
     try:
-        analyzer = SVMSentimentAnalyzer()
-        prediction, probs = analyzer.predict_single(text)
-        return jsonify({
-            "status": "success",
-            "text": text,
-            "prediction": prediction,
-            "probabilities": probs
-        })
+        prediction, probs = get_analyzer().predict_single(text.strip())
+        return jsonify({"status": "success", "text": text, "prediction": prediction, "probabilities": probs})
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
 @app.route("/get-evaluation", methods=["GET"])
 def get_evaluation():
     report = load_json(EVAL_PATH)
-    if report is None:
-        return jsonify({"status": "error", "message": "Laporan evaluasi belum ada."}), 404
+    if report is None: return jsonify({"status": "error", "message": "Laporan evaluasi belum ada."}), 404
     return jsonify({"status": "success", "data": report})
 
+_terms_cache = None
+_terms_lock = threading.Lock()
 @app.route("/get-terms", methods=["GET"])
 def get_terms():
+    global _terms_cache
     terms = load_json(TERMS_PATH)
-    if terms is None:
-        try:
-            pipeline = SVMSentimentAnalyzer().pipeline
-            terms = save_top_terms(pipeline, TERMS_PATH)
-        except FileNotFoundError:
-            return jsonify({"status": "error", "message": "Model belum dilatih."}), 404
-    return jsonify({"status": "success", "data": terms})
+    if terms is not None: return jsonify({"status": "success", "data": terms})
+    if _terms_cache is not None: return jsonify({"status": "success", "data": _terms_cache})
+    try:
+        with _terms_lock:
+            if _terms_cache is None: _terms_cache = save_top_terms(get_analyzer().pipeline, TERMS_PATH)
+        return jsonify({"status": "success", "data": _terms_cache})
+    except FileNotFoundError:
+        return jsonify({"status": "error", "message": "Model belum dilatih."}), 404
 
-
-# ==========================================
-# ENDPOINT VISUALISASI (HYBRID - 3 CHART PYTHON)
-# ==========================================
 @app.route("/api/charts", methods=["GET"])
 def get_charts():
-    """Hanya return 3 chart yang tidak bisa dibuat Chart.js."""
-    try:
-        from modules import visualization as viz
-    except ImportError as e:
-        return jsonify({"status": "error", "message": f"Gagal import: {e}. Pastikan matplotlib, seaborn, wordcloud sudah diinstall."}), 500
+    try: from modules import visualization as viz
+    except ImportError as e: return jsonify({"status": "error", "message": f"Gagal import visualization: {e}."}), 500
 
-    port = request.args.get("port", "ALL")
-    from_date = request.args.get("from", "").strip() or None
-    to_date = request.args.get("to", "").strip() or None
+    ports = _resolve_ports_from_request()
+    from_date = (request.args.get("from") or "").strip() or None
+    to_date = (request.args.get("to") or "").strip() or None
+    proc_path = resolve_processed_path()
+    if not proc_path: return jsonify({"status": "error", "message": "Data processed belum tersedia."}), 404
 
-    # Muat data
-    predicted_path = os.path.join("data", "processed", "review_predicted.csv")
-    deepseek_path  = os.path.join("data", "processed", "review_processed(deepseek).csv")
-    processed_path = os.path.join("data", "processed", "review_processed.csv")
-    raw_path       = os.path.join("data", "raw", "review_pelabuhan1.csv")
+    try: df = pd.read_csv(proc_path).fillna("")
+    except Exception as e: return jsonify({"status": "error", "message": str(e)}), 500
 
-    path = None
-    for p in (predicted_path, deepseek_path, processed_path, raw_path):
-        if os.path.exists(p):
-            path = p
-            break
-
-    if not path:
-        return jsonify({"status": "error", "message": "Tidak ada data"}), 404
+    df = apply_data_filters(df, ports, from_date, to_date)
+    if df.empty: return jsonify({"status": "error", "message": "Tidak ada data setelah filter.", "charts": {}}), 200
 
     try:
-        df = pd.read_csv(path).fillna("")
+        return jsonify({
+            "status": "success",
+            "charts": { "wordcloud": viz.chart_wordcloud(df), "heatmap": viz.chart_heatmap(df), "confusion_matrix": viz.chart_confusion_matrix() },
+            "meta": { "source": os.path.basename(proc_path), "rows_after_filter": int(len(df)) }
+        })
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-
-    # Filter pelabuhan & tanggal
-    if port != "ALL":
-        needle = port.lower()
-        mask = (
-            df.get("lokasi", pd.Series([""] * len(df))).astype(str).str.lower().str.contains(needle)
-            | df.get("pelabuhan", pd.Series([""] * len(df))).astype(str).str.lower().str.contains(needle)
-        )
-        df = df[mask]
-
-    if from_date or to_date:
-        if "tanggal_estimasi" in df.columns:
-            tgl = pd.to_datetime(df["tanggal_estimasi"], errors="coerce")
-        else:
-            tgl = pd.Series([pd.NaT] * len(df))
-        mask = tgl.notna()
-        if from_date:
-            mask &= tgl >= pd.to_datetime(from_date)
-        if to_date:
-            mask &= tgl <= pd.to_datetime(to_date)
-        df = df[mask]
-
-    try:
-        # Generate 3 Chart Python
-        charts = {
-            "wordcloud":         viz.chart_wordcloud(df),
-            "heatmap":           viz.chart_heatmap(df),
-            "confusion_matrix":  viz.chart_confusion_matrix(),
-        }
-        return jsonify({"status": "success", "charts": charts})
-    except Exception as e:
-        return jsonify({"status": "error", "message": f"Gagal membuat chart: {str(e)}"}), 500
-
+        return jsonify({"status": "error", "message": f"Gagal membuat chart: {e}"}), 500
 
 if __name__ == "__main__":
-    app.run(debug=True, port=5000)
+    debug = os.environ.get("FLASK_DEBUG", "0") == "1"
+    app.run(host="127.0.0.1", port=5000, debug=debug)
