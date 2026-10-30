@@ -21,15 +21,9 @@ except ModuleNotFoundError:
 # ---------------------------------------------------------------------------
 # KONFIGURASI
 # ---------------------------------------------------------------------------
-# Kandidat file input, dicoba berurutan. Yang pertama ada akan dipakai.
-# Prioritas: dataset berlabel AI (deepseek/gemini) > hasil preprocessing biasa.
-DATA_PATH_CANDIDATES = [
-    os.path.join("data", "processed", "review_processed(deepseek).csv"),
-    os.path.join("data", "processed", "review_processed(gemini).csv"),
-    os.path.join("data", "processed", "review_processed(4k,sentimen)1.csv"),
-    os.path.join("data", "processed", "review_processed(4k)1.csv"),
-    os.path.join("data", "processed", "review_processed.csv"),
-]
+# Satu file dataset hasil preprocessing terbaru.
+# Pastikan file ini sudah dibuat oleh preprocessing.py sebelum training.
+DATA_PATH = os.path.join("data", "processed", "review_processed(fix).csv")
 
 MODEL_DIR = os.path.join("data", "models")
 MODEL_PATH = os.path.join(MODEL_DIR, "svm_pipeline.pkl")
@@ -53,14 +47,6 @@ def _to_bool(value):
     return str(value).strip().lower() in ("true", "1", "1.0", "yes", "ya")
 
 
-def _resolve_data_path():
-    """Kembalikan path CSV pertama yang ada, atau None."""
-    for p in DATA_PATH_CANDIDATES:
-        if os.path.exists(p):
-            return p
-    return None
-
-
 def _rating_to_sentiment(rating_value):
     """Label dari rating: >=4 POSITIF, <=2 NEGATIF, 3 NETRAL."""
     try:
@@ -81,16 +67,16 @@ def train_svm_model(data_path=None):
 
     os.makedirs(MODEL_DIR, exist_ok=True)
 
-    # --- resolve path ---
+    # --- resolve path: hanya satu dataset ---
     if data_path is None:
-        data_path = _resolve_data_path()
+        data_path = DATA_PATH
 
-    if not data_path or not os.path.exists(data_path):
-        tried = "\n  - ".join(DATA_PATH_CANDIDATES)
-        print(f"❌ File dataset tidak ditemukan. Dicoba:\n  - {tried}")
+    if not os.path.exists(data_path):
+        print(f"❌ File dataset tidak ditemukan: {data_path}")
         return False, (
-            "File dataset tidak ditemukan. Jalankan preprocessing terlebih dahulu, "
-            "atau sediakan CSV berlabel (mis. review_processed(deepseek).csv)."
+            f"File dataset tidak ditemukan: {data_path}. "
+            "Jalankan preprocessing terlebih dahulu untuk menghasilkan "
+            "review_processed(fix).csv."
         )
 
     df = pd.read_csv(data_path)
@@ -172,8 +158,19 @@ def train_svm_model(data_path=None):
     X = df["final_text"].astype(str)
     y = df["sentimen"]
 
+    # --- validasi kelas ---
     if y.nunique() < 2:
         return False, "Hanya ada satu kelas sentimen pada data."
+
+    # Pastikan ketiga kelas sentimen tersedia.
+    missing_labels = set(LABELS) - set(y.unique())
+    if missing_labels:
+        return False, (
+            f"Kelas sentimen tidak lengkap. "
+            f"Kelas yang belum tersedia: {sorted(missing_labels)}. "
+            f"Dataset harus memiliki ketiga kelas: {LABELS}. "
+            f"Jalankan preprocessing/labeling terlebih dahulu."
+        )
 
     min_samples = int(y.value_counts().min())
     if min_samples < 2:
@@ -183,21 +180,31 @@ def train_svm_model(data_path=None):
         )
 
     # --- split ---
-    # stratify butuh minimal 2 sampel per kelas di test set; kalau terlalu
-    # sedikit, kurangi test_size otomatis.
-    test_size = 0.2
-    if min_samples * test_size < 1:
-        test_size = max(0.1, 1.0 / len(df))
+    # Stratified split membutuhkan minimal 1 sampel per kelas pada test set.
+    n_classes = int(y.nunique())
+    n_samples = len(df)
+    test_size = max(0.2, n_classes / n_samples)
 
     try:
         X_train, X_test, y_train, y_test = train_test_split(
             X, y, test_size=test_size, random_state=42, stratify=y
         )
     except ValueError as e:
-        print(f"⚠️ Stratified split gagal ({e}), pakai split non-stratified.")
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=test_size, random_state=42
+        return False, (
+            f"Pembagian data training dan testing gagal: {e}. "
+            f"Periksa kembali jumlah sampel setiap kelas."
         )
+
+    print(
+        f"\n📊 Split: train={len(X_train)} | test={len(X_test)} "
+        f"(test_size={test_size:.3f})"
+    )
+
+    # Distribusi label train/test — pastikan ketiga kelas terwakili.
+    print("\nDistribusi label data training:")
+    print(y_train.value_counts().to_string())
+    print("\nDistribusi label data testing:")
+    print(y_test.value_counts().to_string())
 
     # --- pipeline ---
     sentiment_pipeline = Pipeline([
@@ -244,7 +251,14 @@ def train_svm_model(data_path=None):
             "label_source": label_source,   # "sentimen" atau "rating"
             "n_total": int(total_awal),
             "n_train_data": int(len(X_train)),
+            "n_test_data": int(len(X_test)),
             "label_distribution": {k: int(v) for k, v in y.value_counts().items()},
+            "label_distribution_train": {
+                k: int(v) for k, v in y_train.value_counts().items()
+            },
+            "label_distribution_test": {
+                k: int(v) for k, v in y_test.value_counts().items()
+            },
             "config": {
                 "test_size": test_size, "random_state": 42,
                 "tfidf": {"ngram_range": [1, 2], "max_features": 5000, "sublinear_tf": True},
