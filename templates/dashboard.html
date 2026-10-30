@@ -4,11 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - FerryPulse</title>
-    
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    
+
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
@@ -21,129 +21,145 @@
             <div class="sidebar-heading py-4 px-4 fw-800 text-primary fs-4 border-bottom d-flex align-items-center">
                 <i class="fa-solid fa-anchor me-2"></i>FerryPulse
             </div>
-            
+
             <!-- Filter Analisis -->
             <div class="p-4 border-bottom">
                 <p class="text-muted fw-700 mb-3" style="font-size: 12px; letter-spacing: 1px;"><i class="fa-solid fa-filter me-1"></i> FILTER ANALISIS</p>
-                
+
                 <label class="form-label fw-600 text-muted mb-1" style="font-size: 13px;">Pilih Pelabuhan</label>
-                <div class="input-group mb-3">
-                    <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-location-dot text-dark"></i></span>
-                    <select id="filterPelabuhan" class="form-select border-start-0 ps-0 fw-500" onchange="applyFilter()">
-                        <option value="ALL">Semua Pelabuhan</option>
-                        <option value="Batam Centre">Batam Centre</option>
-                        <option value="Harbour Bay">Harbour Bay</option>
-                        <option value="Telaga Punggur">Telaga Punggur</option>
-                        <option value="Nongsapura">Nongsapura</option>
-                        <option value="Sekupang">Sekupang</option>
-                    </select>
+                <!-- MULTI-SELECT CONTAINER -->
+                <div class="multi-select-container mb-3">
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-location-dot text-dark"></i></span>
+                        <select id="filterPelabuhanSelect" class="form-select border-start-0 ps-0 fw-500">
+                            <option value="" disabled selected>Tambah Pelabuhan...</option>
+                            <option value="ALL">Pilih Semua Pelabuhan</option>
+                            <option value="Batam Centre">Batam Centre</option>
+                            <option value="Harbour Bay">Harbour Bay</option>
+                            <option value="Telaga Punggur">Telaga Punggur</option>
+                            <option value="Nongsapura">Nongsapura</option>
+                            <option value="Sekupang">Sekupang</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Area untuk Chip -->
+                    <div id="selectedPortsContainer" class="d-flex flex-wrap gap-2 mt-2"></div>
+                    
+                    <div class="d-flex justify-content-end mt-1">
+                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-danger" style="font-size: 11px;" onclick="clearAllPorts()">Hapus Semua Pilihan</button>
+                    </div>
                 </div>
 
                 <label class="form-label fw-600 text-muted mb-1" style="font-size: 13px;">Rentang Tanggal</label>
                 <div class="input-group input-group-sm mb-2">
                     <span class="input-group-text bg-white border-end-0"><i class="fa-regular fa-calendar text-dark"></i></span>
-                    <input type="date" id="filterTanggalFrom" class="form-control border-start-0 ps-0 fw-500" onchange="applyFilter()">
+                    <input type="date" id="filterTanggalFrom" class="form-control border-start-0 ps-0 fw-500" onchange="updateFilterState()">
                 </div>
                 <div class="input-group input-group-sm mb-1">
                     <span class="input-group-text bg-white border-end-0"><i class="fa-regular fa-calendar text-dark"></i></span>
-                    <input type="date" id="filterTanggalTo" class="form-control border-start-0 ps-0 fw-500" onchange="applyFilter()">
+                    <input type="date" id="filterTanggalTo" class="form-control border-start-0 ps-0 fw-500" onchange="updateFilterState()">
                 </div>
                 <div class="d-flex justify-content-between align-items-center mb-3">
                     <small class="text-muted" style="font-size: 11px;">(estimasi — Google Maps relatif)</small>
-                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" style="font-size: 12px;" onclick="resetTanggalFilter()">Reset</button>
+                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" style="font-size: 12px;" onclick="resetTanggalFilter()">Reset Tanggal</button>
                 </div>
 
-                <button class="btn btn-primary w-100 py-2 fw-600 d-flex justify-content-center align-items-center gap-2" onclick="loadTableData()">
+                <button class="btn btn-primary w-100 py-2 fw-600 d-flex justify-content-center align-items-center gap-2" onclick="loadAllData()">
                     <i class="fa-solid fa-play"></i> Muat Ulang Data
                 </button>
             </div>
 
             <!-- Menu Analisis -->
             <div class="list-group list-group-flush mt-3" id="sidebar-menu">
-                <a href="#" onclick="switchPage('dashboard', this)" class="list-group-item list-group-item-action active d-flex align-items-center">
+                <a href="javascript:void(0)" onclick="switchPage('dashboard', this)" class="list-group-item list-group-item-action active d-flex align-items-center">
                     <i class="fa-solid fa-house me-3"></i> Dashboard
                 </a>
-                <a href="#" onclick="switchPage('popularitas', this)" class="list-group-item list-group-item-action text-muted d-flex align-items-center">
+                <a href="javascript:void(0)" onclick="switchPage('popularitas', this)" class="list-group-item list-group-item-action text-muted d-flex align-items-center">
                     <i class="fa-solid fa-chart-bar me-3"></i> Popularitas & Rating
                 </a>
-                <a href="#" onclick="switchPage('tren', this)" class="list-group-item list-group-item-action text-muted d-flex align-items-center">
+                <a href="javascript:void(0)" onclick="switchPage('tren', this)" class="list-group-item list-group-item-action text-muted d-flex align-items-center">
                     <i class="fa-solid fa-chart-line me-3"></i> Tren Ulasan
                 </a>
-                <a href="#" onclick="switchPage('aspek', this)" class="list-group-item list-group-item-action text-muted d-flex align-items-center">
+                <a href="javascript:void(0)" onclick="switchPage('aspek', this)" class="list-group-item list-group-item-action text-muted d-flex align-items-center">
                     <i class="fa-solid fa-comment-dots me-3"></i> Aspek Ulasan
                 </a>
-                <a href="#" onclick="switchPage('sentimen', this)" class="list-group-item list-group-item-action text-muted d-flex align-items-center">
+                <a href="javascript:void(0)" onclick="switchPage('sentimen', this)" class="list-group-item list-group-item-action text-muted d-flex align-items-center">
                     <i class="fa-regular fa-face-smile me-3"></i> Sentimen & Evaluasi
                 </a>
-                <a href="#" onclick="switchPage('uji', this)" class="list-group-item list-group-item-action text-muted d-flex align-items-center">
+                <a href="javascript:void(0)" onclick="switchPage('uji', this)" class="list-group-item list-group-item-action text-muted d-flex align-items-center">
                     <i class="fa-solid fa-flask me-3"></i> Uji Sentimen
                 </a>
+            </div>
+
+            <div class="p-4 mt-3">
+                <p class="text-muted mb-1" style="font-size: 11px;">
+                    <i class="fa-solid fa-circle-info me-1"></i> Sumber data: Google Maps
+                </p>
+                <p class="text-muted mb-0" style="font-size: 11px;">Jumlah & periode ulasan mengikuti filter aktif.</p>
             </div>
         </div>
 
         <!-- Page Content -->
         <div id="page-content-wrapper" class="w-100">
             <div class="container-fluid px-5 py-4">
-                
-                <!-- ==============================================
-                     HALAMAN 1: DASHBOARD
-                     ============================================== -->
+
+                <!-- DASHBOARD -->
                 <div id="page-dashboard" class="app-page">
                     <div class="mb-4">
                         <h2 class="fw-800 mb-1">Dashboard</h2>
-                        <p class="text-muted">Ringkasan analisis sentimen ulasan pelabuhan ferry di Batam</p>
+                        <p class="text-muted mb-0">Ringkasan analisis sentimen ulasan pelabuhan ferry di Batam.</p>
                     </div>
 
                     <!-- KPI Cards -->
                     <div class="row g-3 mb-4">
-                        <div class="col">
+                        <div class="col-12 col-sm-6 col-xl">
                             <div class="card border-0 shadow-sm p-3 h-100 rounded-4 kpi-card">
                                 <div class="d-flex align-items-center mb-2">
                                     <div class="text-primary me-2 fs-5"><i class="fa-solid fa-comment"></i></div>
                                     <span class="text-muted fw-600" style="font-size: 13px;">Total Ulasan</span>
                                 </div>
                                 <h3 class="fw-800 text-primary mb-1" id="kpiTotal">0</h3>
-                                <p class="text-muted small mb-0">data terfilter</p>
+                                <p class="text-muted small mb-0">dari raw data</p>
                             </div>
                         </div>
-                        <div class="col">
+                        <div class="col-12 col-sm-6 col-xl">
                             <div class="card border-0 shadow-sm p-3 h-100 rounded-4 kpi-card">
                                 <div class="d-flex align-items-center mb-2">
                                     <div class="text-warning me-2 fs-5"><i class="fa-solid fa-star"></i></div>
                                     <span class="text-muted fw-600" style="font-size: 13px;">Rata-rata Rating</span>
                                 </div>
                                 <h3 class="fw-800 text-warning mb-1"><span id="kpiRating">0</span> <span class="fs-6 text-muted">/ 5</span></h3>
-                                <p class="text-muted small mb-0">dari data terfilter</p>
+                                <p class="text-muted small mb-0">dari raw data</p>
                             </div>
                         </div>
-                        <div class="col">
+                        <div class="col-12 col-sm-6 col-xl">
                             <div class="card border-0 shadow-sm p-3 h-100 rounded-4 kpi-card">
                                 <div class="d-flex align-items-center mb-2">
                                     <div class="text-success me-2 fs-5"><i class="fa-regular fa-face-smile"></i></div>
                                     <span class="text-muted fw-600" style="font-size: 13px;">Ulasan Positif</span>
                                 </div>
                                 <h3 class="fw-800 text-success mb-1" id="kpiPositif">0</h3>
-                                <p class="text-muted small mb-0">sentimen POSITIF</p>
+                                <p class="text-muted small mb-0">dari teks diproses</p>
                             </div>
                         </div>
-                        <div class="col">
+                        <div class="col-12 col-sm-6 col-xl">
                             <div class="card border-0 shadow-sm p-3 h-100 rounded-4 kpi-card">
                                 <div class="d-flex align-items-center mb-2">
                                     <div class="text-secondary me-2 fs-5"><i class="fa-regular fa-face-meh"></i></div>
                                     <span class="text-muted fw-600" style="font-size: 13px;">Ulasan Netral</span>
                                 </div>
                                 <h3 class="fw-800 text-secondary mb-1" id="kpiNetral">0</h3>
-                                <p class="text-muted small mb-0">sentimen NETRAL</p>
+                                <p class="text-muted small mb-0">dari teks diproses</p>
                             </div>
                         </div>
-                        <div class="col">
+                        <div class="col-12 col-sm-6 col-xl">
                             <div class="card border-0 shadow-sm p-3 h-100 rounded-4 kpi-card">
                                 <div class="d-flex align-items-center mb-2">
                                     <div class="text-danger me-2 fs-5"><i class="fa-regular fa-face-frown"></i></div>
                                     <span class="text-muted fw-600" style="font-size: 13px;">Ulasan Negatif</span>
                                 </div>
                                 <h3 class="fw-800 text-danger mb-1" id="kpiNegatif">0</h3>
-                                <p class="text-muted small mb-0">sentimen NEGATIF</p>
+                                <p class="text-muted small mb-0">dari teks diproses</p>
                             </div>
                         </div>
                     </div>
@@ -197,18 +213,16 @@
                     </div>
                 </div>
 
-                <!-- ==============================================
-                     HALAMAN POPULARITAS (Card Atas-Bawah)
-                     ============================================== -->
+                <!-- POPULARITAS -->
                 <div id="page-popularitas" class="app-page d-none">
                     <div class="mb-4">
                         <h2 class="fw-800 mb-1">Popularitas & Rating</h2>
-                        <p class="text-muted">Analisis popularitas dan kualitas rating pelabuhan ferry</p>
+                        <p class="text-muted mb-0">Membandingkan jumlah ulasan (popularitas) dengan rata-rata rating setiap pelabuhan dari sumber RAW CSV.</p>
                     </div>
                     <div class="row g-4">
                         <div class="col-12">
                             <div class="card border-0 shadow-sm p-4 rounded-4">
-                                <h6 class="fw-800 mb-3">Distribusi Popularitas</h6>
+                                <h6 class="fw-800 mb-3">Distribusi Popularitas (Volume Ulasan)</h6>
                                 <div style="height: 350px;"><canvas id="chartPopularitas"></canvas></div>
                             </div>
                         </div>
@@ -221,12 +235,11 @@
                     </div>
                 </div>
 
-                <!-- ==============================================
-                     HALAMAN TREN (Card Atas-Bawah)
-                     ============================================== -->
+                <!-- TREN -->
                 <div id="page-tren" class="app-page d-none">
                     <div class="mb-4">
                         <h2 class="fw-800 mb-1">Tren Ulasan</h2>
+                        <p class="text-muted mb-0">Menampilkan perkembangan jumlah ulasan dan perubahan aspek yang sering dibahas pengguna dari waktu ke waktu.</p>
                     </div>
                     <div class="row g-4">
                         <div class="col-12">
@@ -244,57 +257,90 @@
                     </div>
                 </div>
 
-                <!-- ==============================================
-                     HALAMAN ASPEK (Card Atas-Bawah)
-                     ============================================== -->
+                <!-- ASPEK -->
                 <div id="page-aspek" class="app-page d-none">
                     <div class="mb-4">
                         <h2 class="fw-800 mb-1">Aspek Ulasan</h2>
+                        <p class="text-muted mb-0">Mengelompokkan ulasan berdasarkan aspek (kebersihan, fasilitas, pelayanan, dan lainnya) serta menampilkan kata yang paling sering muncul.</p>
                     </div>
                     <div class="row g-4">
                         <div class="col-12">
                             <div class="card border-0 shadow-sm p-4 rounded-4">
-                                <h6 class="fw-800 mb-3">Analisis Aspek Keluhan & Pujian</h6>
+                                <h6 class="fw-800 mb-3">Analisis Aspek Keluhan & Pujian (Data Processed)</h6>
                                 <div style="height: 350px;"><canvas id="chartAspekStacked"></canvas></div>
+                                <p class="text-muted small mt-2 mb-0">
+                                    <i class="fa-solid fa-circle-info me-1"></i>
+                                    Satu ulasan bisa masuk ke lebih dari satu aspek jika menyebut beberapa topik sekaligus.
+                                </p>
                             </div>
                         </div>
                         <div class="col-12">
                             <div class="card border-0 shadow-sm p-4 rounded-4">
                                 <h6 class="fw-800 mb-3">Word Cloud <span class="badge bg-secondary ms-2">Python</span></h6>
-                                <div class="text-center"><img id="imgWordcloud" class="img-fluid rounded" alt="Memuat..."></div>
+                                <div class="text-center position-relative" style="min-height: 220px;">
+                                    <img id="imgWordcloud" class="img-fluid rounded" alt="Memuat WordCloud..."
+                                         onerror="this.style.display='none'; document.getElementById('imgWordcloudFallback').style.display='block';">
+                                    <div id="imgWordcloudFallback" class="text-muted small py-5" style="display:none;">
+                                        <i class="fa-regular fa-image fa-2x mb-2 d-block"></i>
+                                        Visualisasi Word Cloud belum tersedia.
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- ==============================================
-                     HALAMAN SENTIMEN (Card Atas-Bawah)
-                     ============================================== -->
+                <!-- SENTIMEN & EVALUASI -->
                 <div id="page-sentimen" class="app-page d-none">
                     <div class="mb-4">
                         <h2 class="fw-800 mb-1">Sentimen & Evaluasi Model</h2>
+                        <p class="text-muted mb-0">Heatmap mengikuti filter aktif. Confusion Matrix adalah hasil evaluasi model secara keseluruhan.</p>
                     </div>
                     <div class="row g-4">
                         <div class="col-12">
                             <div class="card border-0 shadow-sm p-4 rounded-4">
                                 <h6 class="fw-800 mb-3">Heatmap Sentimen <span class="badge bg-secondary ms-2">Python</span></h6>
-                                <div class="text-center"><img id="imgHeatmap" class="img-fluid rounded" alt="Memuat..."></div>
+                                <div class="text-center" style="min-height: 220px;">
+                                    <img id="imgHeatmap" class="img-fluid rounded" alt="Memuat Heatmap..."
+                                         onerror="this.style.display='none'; document.getElementById('imgHeatmapFallback').style.display='block';">
+                                    <div id="imgHeatmapFallback" class="text-muted small py-5" style="display:none;">
+                                        <i class="fa-regular fa-image fa-2x mb-2 d-block"></i>
+                                        Visualisasi Heatmap belum tersedia.
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div class="col-12">
                             <div class="card border-0 shadow-sm p-4 rounded-4">
-                                <h6 class="fw-800 mb-3">Confusion Matrix <span class="badge bg-secondary ms-2">Python</span></h6>
-                                <div class="text-center"><img id="imgConfusion" class="img-fluid rounded" alt="Memuat..."></div>
+                                <h6 class="fw-800 mb-3">
+                                    Confusion Matrix
+                                    <span class="badge bg-secondary ms-2">Python</span>
+                                    <span class="badge bg-info text-dark ms-2">Evaluasi Global</span>
+                                </h6>
+                                <p class="text-muted small mb-3">
+                                    <i class="fa-solid fa-circle-info me-1"></i>
+                                    Confusion Matrix menampilkan hasil evaluasi model berdasarkan data pengujian saat proses training.
+                                    Angka ini <b>tidak mengikuti filter pelabuhan maupun rentang tanggal</b> pada sidebar.
+                                </p>
+                                <div class="text-center" style="min-height: 220px;">
+                                    <img id="imgConfusion" class="img-fluid rounded" alt="Memuat Confusion Matrix..."
+                                         onerror="this.style.display='none'; document.getElementById('imgConfusionFallback').style.display='block';">
+                                    <div id="imgConfusionFallback" class="text-muted small py-5" style="display:none;">
+                                        <i class="fa-regular fa-image fa-2x mb-2 d-block"></i>
+                                        Visualisasi Confusion Matrix belum tersedia. Pastikan model sudah dilatih.
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- ==============================================
-                     HALAMAN UJI SENTIMEN (Form)
-                     ============================================== -->
+                <!-- UJI SENTIMEN -->
                 <div id="page-uji" class="app-page d-none">
-                    <div class="mb-4"><h2 class="fw-800 mb-1">Uji Sentimen</h2></div>
+                    <div class="mb-4">
+                        <h2 class="fw-800 mb-1">Uji Sentimen</h2>
+                        <p class="text-muted mb-0">Masukkan teks ulasan untuk melihat prediksi sentimen dari model SVM yang sudah dilatih.</p>
+                    </div>
                     <div class="row g-4">
                         <div class="col-lg-8">
                             <div class="card border-0 shadow-sm p-4 rounded-4">

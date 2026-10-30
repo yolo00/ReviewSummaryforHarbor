@@ -1,0 +1,2850 @@
+{
+  "url": "https://maps.app.goo.gl/xteioSuSkvQCAnCm9",
+  "timestamp": "2026-10-30T14:34:00.475671",
+  "total_cards": 90,
+  "dumped_cards": [
+    {
+      "index": 1,
+      "nama": "Jaka Ramadhona",
+      "preview": "Jaka Ramadhona | Local Guide · 32 ulasan · 65 foto | ",
+      "dump": {
+        "allButtons": [
+          {
+            "ariaLabel": "Foto Jaka Ramadhona",
+            "className": "WEBjve",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "al6Kxe",
+            "dataPhotoIndex": null,
+            "text": "Jaka Ramadhona\nLocal Guide · 3"
+          },
+          {
+            "ariaLabel": "Tindakan untuk ulasan Jaka Ramadhona",
+            "className": "PP3Y3d S1qRNe",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": "Lihat lainnya",
+            "className": "w8nwRe kyuRq",
+            "dataPhotoIndex": null,
+            "text": "Lainnya"
+          },
+          {
+            "ariaLabel": "Video",
+            "className": "Tya61d",
+            "dataPhotoIndex": "0",
+            "text": "0:03"
+          },
+          {
+            "ariaLabel": "Video",
+            "className": "Tya61d",
+            "dataPhotoIndex": "1",
+            "text": "0:03"
+          },
+          {
+            "ariaLabel": "Foto 3 di ulasan Jaka Ramadhona",
+            "className": "Tya61d",
+            "dataPhotoIndex": "2",
+            "text": ""
+          },
+          {
+            "ariaLabel": "+ 2 foto lainnya di ulasan Jaka Ramadhona",
+            "className": "Tya61d",
+            "dataPhotoIndex": "3",
+            "text": "+2"
+          },
+          {
+            "ariaLabel": "Suka",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nSuka"
+          },
+          {
+            "ariaLabel": "Bagikan ulasan Jaka Ramadhona.",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nBagikan"
+          }
+        ],
+        "allImages": [
+          {
+            "alt": "",
+            "className": "NBa7we",
+            "height": 32,
+            "parentClass": "WEBjve",
+            "src": "https://lh3.googleusercontent.com/a-/ALV-UjWdt7rPM_piFbJP2s2nxfWMLrTnzmc9XOMIe_eIKmHT4W4_26xf=w54-h54-p-rp-mo-ba12-br100",
+            "width": 32
+          }
+        ],
+        "cardHTMLSize": 7594,
+        "photoIndexButtons": [
+          {
+            "ariaLabel": "Video",
+            "className": "Tya61d",
+            "index": "0",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "Video",
+            "className": "Tya61d",
+            "index": "1",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "Foto 3 di ulasan Jaka Ramadhona",
+            "className": "Tya61d",
+            "index": "2",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "+ 2 foto lainnya di ulasan Jaka Ramadhona",
+            "className": "Tya61d",
+            "index": "3",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          }
+        ],
+        "photoLikeElements": [],
+        "totalButtons": 10,
+        "totalImages": 1,
+        "totalLinks": 0
+      }
+    },
+    {
+      "index": 2,
+      "nama": "Noorzidah M N",
+      "preview": "Noorzidah M N | Local Guide · 988 ulasan · 13.941 foto | ",
+      "dump": {
+        "allButtons": [
+          {
+            "ariaLabel": "Foto Noorzidah M N",
+            "className": "WEBjve",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "al6Kxe",
+            "dataPhotoIndex": null,
+            "text": "Noorzidah M N\nLocal Guide · 98"
+          },
+          {
+            "ariaLabel": "Tindakan untuk ulasan Noorzidah M N",
+            "className": "PP3Y3d S1qRNe",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "kyuRq fontTitleSmall WOKzJe",
+            "dataPhotoIndex": null,
+            "text": "Lihat terjemahan (Indonesia)"
+          },
+          {
+            "ariaLabel": "Foto 1 di ulasan Noorzidah M N",
+            "className": "Tya61d",
+            "dataPhotoIndex": "0",
+            "text": ""
+          },
+          {
+            "ariaLabel": "Foto 2 di ulasan Noorzidah M N",
+            "className": "Tya61d",
+            "dataPhotoIndex": "1",
+            "text": ""
+          },
+          {
+            "ariaLabel": "Foto 3 di ulasan Noorzidah M N",
+            "className": "Tya61d",
+            "dataPhotoIndex": "2",
+            "text": ""
+          },
+          {
+            "ariaLabel": "+ 5 foto lainnya di ulasan Noorzidah M N",
+            "className": "Tya61d",
+            "dataPhotoIndex": "3",
+            "text": "+5"
+          },
+          {
+            "ariaLabel": "Suka",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nSuka"
+          },
+          {
+            "ariaLabel": "Bagikan ulasan Noorzidah M N.",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nBagikan"
+          }
+        ],
+        "allImages": [
+          {
+            "alt": "",
+            "className": "NBa7we",
+            "height": 32,
+            "parentClass": "WEBjve",
+            "src": "https://lh3.googleusercontent.com/a-/ALV-UjW0LfCkciBlq8_f--swewmh1BY87PS2GxkFF3HC7EK3jKaPQtXj4A=w54-h54-p-rp-mo-ba12-br1",
+            "width": 32
+          }
+        ],
+        "cardHTMLSize": 7580,
+        "photoIndexButtons": [
+          {
+            "ariaLabel": "Foto 1 di ulasan Noorzidah M N",
+            "className": "Tya61d",
+            "index": "0",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "Foto 2 di ulasan Noorzidah M N",
+            "className": "Tya61d",
+            "index": "1",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "Foto 3 di ulasan Noorzidah M N",
+            "className": "Tya61d",
+            "index": "2",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "+ 5 foto lainnya di ulasan Noorzidah M N",
+            "className": "Tya61d",
+            "index": "3",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          }
+        ],
+        "photoLikeElements": [],
+        "totalButtons": 10,
+        "totalImages": 1,
+        "totalLinks": 0
+      }
+    },
+    {
+      "index": 3,
+      "nama": "Dainty Ei",
+      "preview": "Dainty Ei | Local Guide · 112 ulasan · 261 foto | ",
+      "dump": {
+        "allButtons": [
+          {
+            "ariaLabel": "Foto Dainty Ei",
+            "className": "WEBjve",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "al6Kxe",
+            "dataPhotoIndex": null,
+            "text": "Dainty Ei\nLocal Guide · 112 ul"
+          },
+          {
+            "ariaLabel": "Tindakan untuk ulasan Dainty Ei",
+            "className": "PP3Y3d S1qRNe",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": "Lihat lainnya",
+            "className": "w8nwRe kyuRq",
+            "dataPhotoIndex": null,
+            "text": "Lainnya"
+          },
+          {
+            "ariaLabel": null,
+            "className": "kyuRq fontTitleSmall WOKzJe",
+            "dataPhotoIndex": null,
+            "text": "Lihat terjemahan (Indonesia)"
+          },
+          {
+            "ariaLabel": "Video",
+            "className": "Tya61d",
+            "dataPhotoIndex": "0",
+            "text": "0:05"
+          },
+          {
+            "ariaLabel": "Foto 2 di ulasan Dainty Ei",
+            "className": "Tya61d",
+            "dataPhotoIndex": "1",
+            "text": ""
+          },
+          {
+            "ariaLabel": "Foto 3 di ulasan Dainty Ei",
+            "className": "Tya61d",
+            "dataPhotoIndex": "2",
+            "text": ""
+          },
+          {
+            "ariaLabel": "+ 2 foto lainnya di ulasan Dainty Ei",
+            "className": "Tya61d",
+            "dataPhotoIndex": "3",
+            "text": "+2"
+          },
+          {
+            "ariaLabel": "Suka",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nSuka"
+          },
+          {
+            "ariaLabel": "Bagikan ulasan Dainty Ei.",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nBagikan"
+          }
+        ],
+        "allImages": [
+          {
+            "alt": "",
+            "className": "NBa7we",
+            "height": 32,
+            "parentClass": "WEBjve",
+            "src": "https://lh3.googleusercontent.com/a-/ALV-UjUebGlRMb9vrXjJAfXhTkCnQmPbMHWSn8zKwsYGKQ-TNZwinuE=w54-h54-p-rp-mo-ba12-br100",
+            "width": 32
+          }
+        ],
+        "cardHTMLSize": 7971,
+        "photoIndexButtons": [
+          {
+            "ariaLabel": "Video",
+            "className": "Tya61d",
+            "index": "0",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "Foto 2 di ulasan Dainty Ei",
+            "className": "Tya61d",
+            "index": "1",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "Foto 3 di ulasan Dainty Ei",
+            "className": "Tya61d",
+            "index": "2",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "+ 2 foto lainnya di ulasan Dainty Ei",
+            "className": "Tya61d",
+            "index": "3",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          }
+        ],
+        "photoLikeElements": [],
+        "totalButtons": 11,
+        "totalImages": 1,
+        "totalLinks": 0
+      }
+    },
+    {
+      "index": 4,
+      "nama": "Priyanto Akhmad Solihin",
+      "preview": "Priyanto Akhmad Solihin | Local Guide · 2.159 ulasan · 8.646 foto | ",
+      "dump": {
+        "allButtons": [
+          {
+            "ariaLabel": "Foto Priyanto Akhmad Solihin",
+            "className": "WEBjve",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "al6Kxe",
+            "dataPhotoIndex": null,
+            "text": "Priyanto Akhmad Solihin\nLocal "
+          },
+          {
+            "ariaLabel": "Tindakan untuk ulasan Priyanto Akhmad Solihin",
+            "className": "PP3Y3d S1qRNe",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": "Foto 1 di ulasan Priyanto Akhmad Solihin",
+            "className": "Tya61d",
+            "dataPhotoIndex": "0",
+            "text": ""
+          },
+          {
+            "ariaLabel": "Foto 2 di ulasan Priyanto Akhmad Solihin",
+            "className": "Tya61d",
+            "dataPhotoIndex": "1",
+            "text": ""
+          },
+          {
+            "ariaLabel": "Foto 3 di ulasan Priyanto Akhmad Solihin",
+            "className": "Tya61d",
+            "dataPhotoIndex": "2",
+            "text": ""
+          },
+          {
+            "ariaLabel": "+ 4 foto lainnya di ulasan Priyanto Akhmad Solihin",
+            "className": "Tya61d",
+            "dataPhotoIndex": "3",
+            "text": "+4"
+          },
+          {
+            "ariaLabel": "Suka",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nSuka"
+          },
+          {
+            "ariaLabel": "Bagikan ulasan Priyanto Akhmad Solihin.",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nBagikan"
+          }
+        ],
+        "allImages": [
+          {
+            "alt": "",
+            "className": "NBa7we",
+            "height": 32,
+            "parentClass": "WEBjve",
+            "src": "https://lh3.googleusercontent.com/a-/ALV-UjVnW4uozowfh_eGfHVqYdvdu84Qtg8pZTcLR0ybG0lxjVS-7PYnSg=w54-h54-p-rp-mo-ba12-br1",
+            "width": 32
+          }
+        ],
+        "cardHTMLSize": 7167,
+        "photoIndexButtons": [
+          {
+            "ariaLabel": "Foto 1 di ulasan Priyanto Akhmad Solihin",
+            "className": "Tya61d",
+            "index": "0",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "Foto 2 di ulasan Priyanto Akhmad Solihin",
+            "className": "Tya61d",
+            "index": "1",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "Foto 3 di ulasan Priyanto Akhmad Solihin",
+            "className": "Tya61d",
+            "index": "2",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "+ 4 foto lainnya di ulasan Priyanto Akhmad Solihin",
+            "className": "Tya61d",
+            "index": "3",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          }
+        ],
+        "photoLikeElements": [],
+        "totalButtons": 9,
+        "totalImages": 1,
+        "totalLinks": 0
+      }
+    },
+    {
+      "index": 5,
+      "nama": "Orang Baik",
+      "preview": "Orang Baik | Local Guide · 192 ulasan · 1.647 foto | ",
+      "dump": {
+        "allButtons": [
+          {
+            "ariaLabel": "Foto Orang Baik",
+            "className": "WEBjve",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "al6Kxe",
+            "dataPhotoIndex": null,
+            "text": "Orang Baik\nLocal Guide · 192 u"
+          },
+          {
+            "ariaLabel": "Tindakan untuk ulasan Orang Baik",
+            "className": "PP3Y3d S1qRNe",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": "Lihat lainnya",
+            "className": "w8nwRe kyuRq",
+            "dataPhotoIndex": null,
+            "text": "Lainnya"
+          },
+          {
+            "ariaLabel": "Foto 1 di ulasan Orang Baik",
+            "className": "Tya61d",
+            "dataPhotoIndex": "0",
+            "text": ""
+          },
+          {
+            "ariaLabel": "Foto 2 di ulasan Orang Baik",
+            "className": "Tya61d",
+            "dataPhotoIndex": "1",
+            "text": ""
+          },
+          {
+            "ariaLabel": "Foto 3 di ulasan Orang Baik",
+            "className": "Tya61d",
+            "dataPhotoIndex": "2",
+            "text": ""
+          },
+          {
+            "ariaLabel": "1 suka",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\n1"
+          },
+          {
+            "ariaLabel": "Bagikan ulasan Orang Baik.",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nBagikan"
+          }
+        ],
+        "allImages": [
+          {
+            "alt": "",
+            "className": "NBa7we",
+            "height": 32,
+            "parentClass": "WEBjve",
+            "src": "https://lh3.googleusercontent.com/a-/ALV-UjXF-52S9AUYsbHIS-qd39Z_9K_F63JZlada6MWKUw7EBy_BoqDp=w54-h54-p-rp-mo-ba12-br100",
+            "width": 32
+          }
+        ],
+        "cardHTMLSize": 6793,
+        "photoIndexButtons": [
+          {
+            "ariaLabel": "Foto 1 di ulasan Orang Baik",
+            "className": "Tya61d",
+            "index": "0",
+            "rect": {
+              "h": 302,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "Foto 2 di ulasan Orang Baik",
+            "className": "Tya61d",
+            "index": "1",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "Foto 3 di ulasan Orang Baik",
+            "className": "Tya61d",
+            "index": "2",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          }
+        ],
+        "photoLikeElements": [],
+        "totalButtons": 9,
+        "totalImages": 1,
+        "totalLinks": 0
+      }
+    },
+    {
+      "index": 6,
+      "nama": "Expert Reviewer",
+      "preview": "Expert Reviewer | Local Guide · 531 ulasan · 2.638 foto | ",
+      "dump": {
+        "allButtons": [
+          {
+            "ariaLabel": "Foto Expert Reviewer",
+            "className": "WEBjve",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "al6Kxe",
+            "dataPhotoIndex": null,
+            "text": "Expert Reviewer\nLocal Guide · "
+          },
+          {
+            "ariaLabel": "Tindakan untuk ulasan Expert Reviewer",
+            "className": "PP3Y3d S1qRNe",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": "Lihat lainnya",
+            "className": "w8nwRe kyuRq",
+            "dataPhotoIndex": null,
+            "text": "Lainnya"
+          },
+          {
+            "ariaLabel": null,
+            "className": "kyuRq fontTitleSmall WOKzJe",
+            "dataPhotoIndex": null,
+            "text": "Lihat terjemahan (Indonesia)"
+          },
+          {
+            "ariaLabel": "Batam Centre arrival point",
+            "className": "Tya61d",
+            "dataPhotoIndex": "0",
+            "text": ""
+          },
+          {
+            "ariaLabel": "1 suka",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\n1"
+          },
+          {
+            "ariaLabel": "Bagikan ulasan Expert Reviewer.",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nBagikan"
+          }
+        ],
+        "allImages": [
+          {
+            "alt": "",
+            "className": "NBa7we",
+            "height": 32,
+            "parentClass": "WEBjve",
+            "src": "https://lh3.googleusercontent.com/a-/ALV-UjXFWmUtajL9iSKHYC_E7hIedwmTAtEgaxsXtolObcnYa-40yC4=w54-h54-p-rp-mo-ba12-br100",
+            "width": 32
+          }
+        ],
+        "cardHTMLSize": 5913,
+        "photoIndexButtons": [
+          {
+            "ariaLabel": "Batam Centre arrival point",
+            "className": "Tya61d",
+            "index": "0",
+            "rect": {
+              "h": 302,
+              "w": 402
+            },
+            "tag": "BUTTON"
+          }
+        ],
+        "photoLikeElements": [],
+        "totalButtons": 8,
+        "totalImages": 1,
+        "totalLinks": 0
+      }
+    },
+    {
+      "index": 7,
+      "nama": "Selvi Diana Meilinda",
+      "preview": "Selvi Diana Meilinda | Local Guide · 124 ulasan · 350 foto | ",
+      "dump": {
+        "allButtons": [
+          {
+            "ariaLabel": "Foto Selvi Diana Meilinda",
+            "className": "WEBjve",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "al6Kxe",
+            "dataPhotoIndex": null,
+            "text": "Selvi Diana Meilinda\nLocal Gui"
+          },
+          {
+            "ariaLabel": "Tindakan untuk ulasan Selvi Diana Meilinda",
+            "className": "PP3Y3d S1qRNe",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": "Lihat lainnya",
+            "className": "w8nwRe kyuRq",
+            "dataPhotoIndex": null,
+            "text": "Lainnya"
+          },
+          {
+            "ariaLabel": "Foto 1 di ulasan Selvi Diana Meilinda",
+            "className": "Tya61d",
+            "dataPhotoIndex": "0",
+            "text": ""
+          },
+          {
+            "ariaLabel": "Video",
+            "className": "Tya61d",
+            "dataPhotoIndex": "1",
+            "text": "0:04"
+          },
+          {
+            "ariaLabel": "Foto 3 di ulasan Selvi Diana Meilinda",
+            "className": "Tya61d",
+            "dataPhotoIndex": "2",
+            "text": ""
+          },
+          {
+            "ariaLabel": "+ 2 foto lainnya di ulasan Selvi Diana Meilinda",
+            "className": "Tya61d",
+            "dataPhotoIndex": "3",
+            "text": "+2"
+          },
+          {
+            "ariaLabel": "1 suka",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\n1"
+          },
+          {
+            "ariaLabel": "Bagikan ulasan Selvi Diana Meilinda.",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nBagikan"
+          }
+        ],
+        "allImages": [
+          {
+            "alt": "",
+            "className": "NBa7we",
+            "height": 32,
+            "parentClass": "WEBjve",
+            "src": "https://lh3.googleusercontent.com/a-/ALV-UjXB1-XvCEmBGqBV6bjYb-cGfQuFXxSQ3ILAhOUwD02hyUFWTWU=w54-h54-p-rp-mo-ba12-br100",
+            "width": 32
+          }
+        ],
+        "cardHTMLSize": 7264,
+        "photoIndexButtons": [
+          {
+            "ariaLabel": "Foto 1 di ulasan Selvi Diana Meilinda",
+            "className": "Tya61d",
+            "index": "0",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "Video",
+            "className": "Tya61d",
+            "index": "1",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "Foto 3 di ulasan Selvi Diana Meilinda",
+            "className": "Tya61d",
+            "index": "2",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "+ 2 foto lainnya di ulasan Selvi Diana Meilinda",
+            "className": "Tya61d",
+            "index": "3",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          }
+        ],
+        "photoLikeElements": [],
+        "totalButtons": 10,
+        "totalImages": 1,
+        "totalLinks": 0
+      }
+    },
+    {
+      "index": 8,
+      "nama": "Andreas Sihono",
+      "preview": "Andreas Sihono | Local Guide · 39 ulasan · 39 foto | ",
+      "dump": {
+        "allButtons": [
+          {
+            "ariaLabel": "Foto Andreas Sihono",
+            "className": "WEBjve",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "al6Kxe",
+            "dataPhotoIndex": null,
+            "text": "Andreas Sihono\nLocal Guide · 3"
+          },
+          {
+            "ariaLabel": "Tindakan untuk ulasan Andreas Sihono",
+            "className": "PP3Y3d S1qRNe",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": "Foto 1 di ulasan Andreas Sihono",
+            "className": "Tya61d",
+            "dataPhotoIndex": "0",
+            "text": ""
+          },
+          {
+            "ariaLabel": "Suka",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nSuka"
+          },
+          {
+            "ariaLabel": "Bagikan ulasan Andreas Sihono.",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nBagikan"
+          }
+        ],
+        "allImages": [
+          {
+            "alt": "",
+            "className": "NBa7we",
+            "height": 32,
+            "parentClass": "WEBjve",
+            "src": "https://lh3.googleusercontent.com/a-/ALV-UjW8imHWrBsnF4CtofUKGSSmItte2WbQxmMXDiPXQLr79fOJU-ro8g=w54-h54-p-rp-mo-ba12-br1",
+            "width": 32
+          }
+        ],
+        "cardHTMLSize": 4842,
+        "photoIndexButtons": [
+          {
+            "ariaLabel": "Foto 1 di ulasan Andreas Sihono",
+            "className": "Tya61d",
+            "index": "0",
+            "rect": {
+              "h": 302,
+              "w": 402
+            },
+            "tag": "BUTTON"
+          }
+        ],
+        "photoLikeElements": [],
+        "totalButtons": 6,
+        "totalImages": 1,
+        "totalLinks": 0
+      }
+    },
+    {
+      "index": 9,
+      "nama": "lontongstroong",
+      "preview": "lontongstroong | Local Guide · 777 ulasan · 3.758 foto | ",
+      "dump": {
+        "allButtons": [
+          {
+            "ariaLabel": "Foto lontongstroong",
+            "className": "WEBjve",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "al6Kxe",
+            "dataPhotoIndex": null,
+            "text": "lontongstroong\nLocal Guide · 7"
+          },
+          {
+            "ariaLabel": "Tindakan untuk ulasan lontongstroong",
+            "className": "PP3Y3d S1qRNe",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": "Lihat lainnya",
+            "className": "w8nwRe kyuRq",
+            "dataPhotoIndex": null,
+            "text": "Lainnya"
+          },
+          {
+            "ariaLabel": "Foto 1 di ulasan lontongstroong",
+            "className": "Tya61d",
+            "dataPhotoIndex": "0",
+            "text": ""
+          },
+          {
+            "ariaLabel": "Foto 2 di ulasan lontongstroong",
+            "className": "Tya61d",
+            "dataPhotoIndex": "1",
+            "text": ""
+          },
+          {
+            "ariaLabel": "Foto 3 di ulasan lontongstroong",
+            "className": "Tya61d",
+            "dataPhotoIndex": "2",
+            "text": ""
+          },
+          {
+            "ariaLabel": "+ 6 foto lainnya di ulasan lontongstroong",
+            "className": "Tya61d",
+            "dataPhotoIndex": "3",
+            "text": "+6"
+          },
+          {
+            "ariaLabel": "1 suka",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\n1"
+          },
+          {
+            "ariaLabel": "Bagikan ulasan lontongstroong.",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nBagikan"
+          }
+        ],
+        "allImages": [
+          {
+            "alt": "",
+            "className": "NBa7we",
+            "height": 32,
+            "parentClass": "WEBjve",
+            "src": "https://lh3.googleusercontent.com/a-/ALV-UjWnlDnQdIiRVGPPjHCFJrWtm4ROxtfQz27Vz39DC7nNdmectwSX7A=w54-h54-p-rp-mo-ba12-br1",
+            "width": 32
+          }
+        ],
+        "cardHTMLSize": 7065,
+        "photoIndexButtons": [
+          {
+            "ariaLabel": "Foto 1 di ulasan lontongstroong",
+            "className": "Tya61d",
+            "index": "0",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "Foto 2 di ulasan lontongstroong",
+            "className": "Tya61d",
+            "index": "1",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "Foto 3 di ulasan lontongstroong",
+            "className": "Tya61d",
+            "index": "2",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "+ 6 foto lainnya di ulasan lontongstroong",
+            "className": "Tya61d",
+            "index": "3",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          }
+        ],
+        "photoLikeElements": [],
+        "totalButtons": 10,
+        "totalImages": 1,
+        "totalLinks": 0
+      }
+    },
+    {
+      "index": 10,
+      "nama": "Limitless People",
+      "preview": "Limitless People | Local Guide · 130 ulasan · 103 foto | ",
+      "dump": {
+        "allButtons": [
+          {
+            "ariaLabel": "Foto Limitless People",
+            "className": "WEBjve",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "al6Kxe",
+            "dataPhotoIndex": null,
+            "text": "Limitless People\nLocal Guide ·"
+          },
+          {
+            "ariaLabel": "Tindakan untuk ulasan Limitless People",
+            "className": "PP3Y3d S1qRNe",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "kyuRq fontTitleSmall WOKzJe",
+            "dataPhotoIndex": null,
+            "text": "Lihat terjemahan (Indonesia)"
+          },
+          {
+            "ariaLabel": "Foto 1 di ulasan Limitless People",
+            "className": "Tya61d",
+            "dataPhotoIndex": "0",
+            "text": ""
+          },
+          {
+            "ariaLabel": "Foto 2 di ulasan Limitless People",
+            "className": "Tya61d",
+            "dataPhotoIndex": "1",
+            "text": ""
+          },
+          {
+            "ariaLabel": "Suka",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nSuka"
+          },
+          {
+            "ariaLabel": "Bagikan ulasan Limitless People.",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nBagikan"
+          }
+        ],
+        "allImages": [
+          {
+            "alt": "",
+            "className": "NBa7we",
+            "height": 32,
+            "parentClass": "WEBjve",
+            "src": "https://lh3.googleusercontent.com/a/ACg8ocIat4bsT5NZooMqoHVrelS-VZxiyUVr-r5GDSAAXT18RizOTA=w54-h54-p-rp-mo-ba12-br100",
+            "width": 32
+          }
+        ],
+        "cardHTMLSize": 5988,
+        "photoIndexButtons": [
+          {
+            "ariaLabel": "Foto 1 di ulasan Limitless People",
+            "className": "Tya61d",
+            "index": "0",
+            "rect": {
+              "h": 302,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "Foto 2 di ulasan Limitless People",
+            "className": "Tya61d",
+            "index": "1",
+            "rect": {
+              "h": 302,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          }
+        ],
+        "photoLikeElements": [],
+        "totalButtons": 8,
+        "totalImages": 1,
+        "totalLinks": 0
+      }
+    },
+    {
+      "index": 11,
+      "nama": "John Isaac Johnston",
+      "preview": "John Isaac Johnston | Local Guide · 200 ulasan · 1.315 foto | ",
+      "dump": {
+        "allButtons": [
+          {
+            "ariaLabel": "Foto John Isaac Johnston",
+            "className": "WEBjve",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "al6Kxe",
+            "dataPhotoIndex": null,
+            "text": "John Isaac Johnston\nLocal Guid"
+          },
+          {
+            "ariaLabel": "Tindakan untuk ulasan John Isaac Johnston",
+            "className": "PP3Y3d S1qRNe",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": "Lihat lainnya",
+            "className": "w8nwRe kyuRq",
+            "dataPhotoIndex": null,
+            "text": "Lainnya"
+          },
+          {
+            "ariaLabel": null,
+            "className": "kyuRq fontTitleSmall WOKzJe",
+            "dataPhotoIndex": null,
+            "text": "Lihat terjemahan (Indonesia)"
+          },
+          {
+            "ariaLabel": "Foto 1 di ulasan John Isaac Johnston",
+            "className": "Tya61d",
+            "dataPhotoIndex": "0",
+            "text": ""
+          },
+          {
+            "ariaLabel": "Foto 2 di ulasan John Isaac Johnston",
+            "className": "Tya61d",
+            "dataPhotoIndex": "1",
+            "text": ""
+          },
+          {
+            "ariaLabel": "Foto 3 di ulasan John Isaac Johnston",
+            "className": "Tya61d",
+            "dataPhotoIndex": "2",
+            "text": ""
+          },
+          {
+            "ariaLabel": "+ 2 foto lainnya di ulasan John Isaac Johnston",
+            "className": "Tya61d",
+            "dataPhotoIndex": "3",
+            "text": "+2"
+          },
+          {
+            "ariaLabel": "Suka",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nSuka"
+          },
+          {
+            "ariaLabel": "Bagikan ulasan John Isaac Johnston.",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nBagikan"
+          }
+        ],
+        "allImages": [
+          {
+            "alt": "",
+            "className": "NBa7we",
+            "height": 32,
+            "parentClass": "WEBjve",
+            "src": "https://lh3.googleusercontent.com/a-/ALV-UjWOg1RY1ipdFJJmqlVo5PdBKw9VMKMY8zKY1FCFYcSRbJ7oBhYF=w54-h54-p-rp-mo-ba12-br100",
+            "width": 32
+          }
+        ],
+        "cardHTMLSize": 7525,
+        "photoIndexButtons": [
+          {
+            "ariaLabel": "Foto 1 di ulasan John Isaac Johnston",
+            "className": "Tya61d",
+            "index": "0",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "Foto 2 di ulasan John Isaac Johnston",
+            "className": "Tya61d",
+            "index": "1",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "Foto 3 di ulasan John Isaac Johnston",
+            "className": "Tya61d",
+            "index": "2",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "+ 2 foto lainnya di ulasan John Isaac Johnston",
+            "className": "Tya61d",
+            "index": "3",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          }
+        ],
+        "photoLikeElements": [],
+        "totalButtons": 11,
+        "totalImages": 1,
+        "totalLinks": 0
+      }
+    },
+    {
+      "index": 12,
+      "nama": "Djer.Dolanan",
+      "preview": "Djer.Dolanan | Local Guide · 368 ulasan · 4.269 foto | ",
+      "dump": {
+        "allButtons": [
+          {
+            "ariaLabel": "Foto Djer.Dolanan",
+            "className": "WEBjve",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "al6Kxe",
+            "dataPhotoIndex": null,
+            "text": "Djer.Dolanan\nLocal Guide · 368"
+          },
+          {
+            "ariaLabel": "Tindakan untuk ulasan Djer.Dolanan",
+            "className": "PP3Y3d S1qRNe",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": "Lihat lainnya",
+            "className": "w8nwRe kyuRq",
+            "dataPhotoIndex": null,
+            "text": "Lainnya"
+          },
+          {
+            "ariaLabel": "Foto 1 di ulasan Djer.Dolanan",
+            "className": "Tya61d",
+            "dataPhotoIndex": "0",
+            "text": ""
+          },
+          {
+            "ariaLabel": "Foto 2 di ulasan Djer.Dolanan",
+            "className": "Tya61d",
+            "dataPhotoIndex": "1",
+            "text": ""
+          },
+          {
+            "ariaLabel": "Foto 3 di ulasan Djer.Dolanan",
+            "className": "Tya61d",
+            "dataPhotoIndex": "2",
+            "text": ""
+          },
+          {
+            "ariaLabel": "+ 6 foto lainnya di ulasan Djer.Dolanan",
+            "className": "Tya61d",
+            "dataPhotoIndex": "3",
+            "text": "+6"
+          },
+          {
+            "ariaLabel": "Suka",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nSuka"
+          },
+          {
+            "ariaLabel": "Bagikan ulasan Djer.Dolanan.",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nBagikan"
+          }
+        ],
+        "allImages": [
+          {
+            "alt": "",
+            "className": "NBa7we",
+            "height": 32,
+            "parentClass": "WEBjve",
+            "src": "https://lh3.googleusercontent.com/a-/ALV-UjV32s0EyzMJqMvMm9_IUDaiZwAyHvdKoYq3t_ieAlPNo5QWAdQ=w54-h54-p-rp-mo-ba12-br100",
+            "width": 32
+          }
+        ],
+        "cardHTMLSize": 7069,
+        "photoIndexButtons": [
+          {
+            "ariaLabel": "Foto 1 di ulasan Djer.Dolanan",
+            "className": "Tya61d",
+            "index": "0",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "Foto 2 di ulasan Djer.Dolanan",
+            "className": "Tya61d",
+            "index": "1",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "Foto 3 di ulasan Djer.Dolanan",
+            "className": "Tya61d",
+            "index": "2",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "+ 6 foto lainnya di ulasan Djer.Dolanan",
+            "className": "Tya61d",
+            "index": "3",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          }
+        ],
+        "photoLikeElements": [],
+        "totalButtons": 10,
+        "totalImages": 1,
+        "totalLinks": 0
+      }
+    },
+    {
+      "index": 13,
+      "nama": "Reni perwira",
+      "preview": "Reni perwira | Local Guide · 273 ulasan · 1.450 foto | ",
+      "dump": {
+        "allButtons": [
+          {
+            "ariaLabel": "Foto Reni perwira",
+            "className": "WEBjve",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "al6Kxe",
+            "dataPhotoIndex": null,
+            "text": "Reni perwira\nLocal Guide · 273"
+          },
+          {
+            "ariaLabel": "Tindakan untuk ulasan Reni perwira",
+            "className": "PP3Y3d S1qRNe",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": "Lihat lainnya",
+            "className": "w8nwRe kyuRq",
+            "dataPhotoIndex": null,
+            "text": "Lainnya"
+          },
+          {
+            "ariaLabel": "Video",
+            "className": "Tya61d",
+            "dataPhotoIndex": "0",
+            "text": "0:09"
+          },
+          {
+            "ariaLabel": "Video",
+            "className": "Tya61d",
+            "dataPhotoIndex": "1",
+            "text": "0:03"
+          },
+          {
+            "ariaLabel": "Video",
+            "className": "Tya61d",
+            "dataPhotoIndex": "2",
+            "text": "0:07"
+          },
+          {
+            "ariaLabel": "+ 2 foto lainnya di ulasan Reni perwira",
+            "className": "Tya61d",
+            "dataPhotoIndex": "3",
+            "text": "0:06\n+2"
+          },
+          {
+            "ariaLabel": "6 suka",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\n6"
+          },
+          {
+            "ariaLabel": "Bagikan ulasan Reni perwira.",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nBagikan"
+          }
+        ],
+        "allImages": [
+          {
+            "alt": "",
+            "className": "NBa7we",
+            "height": 32,
+            "parentClass": "WEBjve",
+            "src": "https://lh3.googleusercontent.com/a/ACg8ocIphqveEAh9O5M6GABtpWn7HmOheKP0HkrchzZAlofBW-xlc1GA=w54-h54-p-rp-mo-ba12-br100",
+            "width": 32
+          }
+        ],
+        "cardHTMLSize": 7211,
+        "photoIndexButtons": [
+          {
+            "ariaLabel": "Video",
+            "className": "Tya61d",
+            "index": "0",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "Video",
+            "className": "Tya61d",
+            "index": "1",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "Video",
+            "className": "Tya61d",
+            "index": "2",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "+ 2 foto lainnya di ulasan Reni perwira",
+            "className": "Tya61d",
+            "index": "3",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          }
+        ],
+        "photoLikeElements": [],
+        "totalButtons": 10,
+        "totalImages": 1,
+        "totalLinks": 0
+      }
+    },
+    {
+      "index": 14,
+      "nama": "Daniel Judah",
+      "preview": "Daniel Judah | Local Guide · 709 ulasan · 6.749 foto | ",
+      "dump": {
+        "allButtons": [
+          {
+            "ariaLabel": "Foto Daniel Judah",
+            "className": "WEBjve",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "al6Kxe",
+            "dataPhotoIndex": null,
+            "text": "Daniel Judah\nLocal Guide · 709"
+          },
+          {
+            "ariaLabel": "Tindakan untuk ulasan Daniel Judah",
+            "className": "PP3Y3d S1qRNe",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": "Lihat lainnya",
+            "className": "w8nwRe kyuRq",
+            "dataPhotoIndex": null,
+            "text": "Lainnya"
+          },
+          {
+            "ariaLabel": null,
+            "className": "kyuRq fontTitleSmall WOKzJe",
+            "dataPhotoIndex": null,
+            "text": "Lihat terjemahan (Indonesia)"
+          },
+          {
+            "ariaLabel": "Foto 1 di ulasan Daniel Judah",
+            "className": "Tya61d",
+            "dataPhotoIndex": "0",
+            "text": ""
+          },
+          {
+            "ariaLabel": "Foto 2 di ulasan Daniel Judah",
+            "className": "Tya61d",
+            "dataPhotoIndex": "1",
+            "text": ""
+          },
+          {
+            "ariaLabel": "Foto 3 di ulasan Daniel Judah",
+            "className": "Tya61d",
+            "dataPhotoIndex": "2",
+            "text": ""
+          },
+          {
+            "ariaLabel": "+ 5 foto lainnya di ulasan Daniel Judah",
+            "className": "Tya61d",
+            "dataPhotoIndex": "3",
+            "text": "+5"
+          },
+          {
+            "ariaLabel": "Suka",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nSuka"
+          },
+          {
+            "ariaLabel": "Bagikan ulasan Daniel Judah.",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nBagikan"
+          }
+        ],
+        "allImages": [
+          {
+            "alt": "",
+            "className": "NBa7we",
+            "height": 32,
+            "parentClass": "WEBjve",
+            "src": "https://lh3.googleusercontent.com/a-/ALV-UjV_16yN_U7eS5-gxpdrgb4C1WklsPLcNcUrReZnsh-Rq6T2XUIK=w54-h54-p-rp-mo-ba12-br100",
+            "width": 32
+          }
+        ],
+        "cardHTMLSize": 7538,
+        "photoIndexButtons": [
+          {
+            "ariaLabel": "Foto 1 di ulasan Daniel Judah",
+            "className": "Tya61d",
+            "index": "0",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "Foto 2 di ulasan Daniel Judah",
+            "className": "Tya61d",
+            "index": "1",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "Foto 3 di ulasan Daniel Judah",
+            "className": "Tya61d",
+            "index": "2",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "+ 5 foto lainnya di ulasan Daniel Judah",
+            "className": "Tya61d",
+            "index": "3",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          }
+        ],
+        "photoLikeElements": [],
+        "totalButtons": 11,
+        "totalImages": 1,
+        "totalLinks": 0
+      }
+    },
+    {
+      "index": 15,
+      "nama": "Ahmad Shairazi",
+      "preview": "Ahmad Shairazi | Local Guide · 118 ulasan · 56 foto | ",
+      "dump": {
+        "allButtons": [
+          {
+            "ariaLabel": "Foto Ahmad Shairazi",
+            "className": "WEBjve",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "al6Kxe",
+            "dataPhotoIndex": null,
+            "text": "Ahmad Shairazi\nLocal Guide · 1"
+          },
+          {
+            "ariaLabel": "Tindakan untuk ulasan Ahmad Shairazi",
+            "className": "PP3Y3d S1qRNe",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": "Lihat lainnya",
+            "className": "w8nwRe kyuRq",
+            "dataPhotoIndex": null,
+            "text": "Lainnya"
+          },
+          {
+            "ariaLabel": null,
+            "className": "kyuRq fontTitleSmall WOKzJe",
+            "dataPhotoIndex": null,
+            "text": "Lihat terjemahan (Indonesia)"
+          },
+          {
+            "ariaLabel": "Suka",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nSuka"
+          },
+          {
+            "ariaLabel": "Bagikan ulasan Ahmad Shairazi.",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nBagikan"
+          }
+        ],
+        "allImages": [
+          {
+            "alt": "",
+            "className": "NBa7we",
+            "height": 32,
+            "parentClass": "WEBjve",
+            "src": "https://lh3.googleusercontent.com/a-/ALV-UjUFNBGeTn2GBfv7bnSIypF07htYRLEiBkFuz0uniPkCwQr7PA=w54-h54-p-rp-mo-ba12-br100",
+            "width": 32
+          }
+        ],
+        "cardHTMLSize": 5169,
+        "photoIndexButtons": [],
+        "photoLikeElements": [],
+        "totalButtons": 7,
+        "totalImages": 1,
+        "totalLinks": 0
+      }
+    },
+    {
+      "index": 16,
+      "nama": "fadhli zulkifli",
+      "preview": "fadhli zulkifli | Local Guide · 20 ulasan · 6 foto | ",
+      "dump": {
+        "allButtons": [
+          {
+            "ariaLabel": "Foto fadhli zulkifli",
+            "className": "WEBjve",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "al6Kxe",
+            "dataPhotoIndex": null,
+            "text": "fadhli zulkifli\nLocal Guide · "
+          },
+          {
+            "ariaLabel": "Tindakan untuk ulasan fadhli zulkifli",
+            "className": "PP3Y3d S1qRNe",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": "Lihat lainnya",
+            "className": "w8nwRe kyuRq",
+            "dataPhotoIndex": null,
+            "text": "Lainnya"
+          },
+          {
+            "ariaLabel": null,
+            "className": "kyuRq fontTitleSmall WOKzJe",
+            "dataPhotoIndex": null,
+            "text": "Lihat terjemahan (Indonesia)"
+          },
+          {
+            "ariaLabel": "Suka",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nSuka"
+          },
+          {
+            "ariaLabel": "Bagikan ulasan fadhli zulkifli.",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nBagikan"
+          }
+        ],
+        "allImages": [
+          {
+            "alt": "",
+            "className": "NBa7we",
+            "height": 32,
+            "parentClass": "WEBjve",
+            "src": "https://lh3.googleusercontent.com/a-/ALV-UjU5avlUIq-AM84xMDbjdRIIMVxigzEqLclxYeNXYK1DuUmN5jda=w54-h54-p-rp-mo-ba12-br100",
+            "width": 32
+          }
+        ],
+        "cardHTMLSize": 5010,
+        "photoIndexButtons": [],
+        "photoLikeElements": [],
+        "totalButtons": 7,
+        "totalImages": 1,
+        "totalLinks": 0
+      }
+    },
+    {
+      "index": 17,
+      "nama": "Odi Messakh",
+      "preview": "Odi Messakh | 7 ulasan · 5 foto | ",
+      "dump": {
+        "allButtons": [
+          {
+            "ariaLabel": "Foto Odi Messakh",
+            "className": "WEBjve",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "al6Kxe",
+            "dataPhotoIndex": null,
+            "text": "Odi Messakh\n7 ulasan · 5 foto"
+          },
+          {
+            "ariaLabel": "Tindakan untuk ulasan Odi Messakh",
+            "className": "PP3Y3d S1qRNe",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": "Lihat lainnya",
+            "className": "w8nwRe kyuRq",
+            "dataPhotoIndex": null,
+            "text": "Lainnya"
+          },
+          {
+            "ariaLabel": "Suka",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nSuka"
+          },
+          {
+            "ariaLabel": "Bagikan ulasan Odi Messakh.",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nBagikan"
+          }
+        ],
+        "allImages": [
+          {
+            "alt": "",
+            "className": "NBa7we",
+            "height": 32,
+            "parentClass": "WEBjve",
+            "src": "https://lh3.googleusercontent.com/a-/ALV-UjUEhl0_hw0FC_DBpSdJYQWhc3CGFUpVI6jY8EeVV2QMDGb_ZnYW=w54-h54-p-rp-mo-br100",
+            "width": 32
+          }
+        ],
+        "cardHTMLSize": 4559,
+        "photoIndexButtons": [],
+        "photoLikeElements": [],
+        "totalButtons": 6,
+        "totalImages": 1,
+        "totalLinks": 0
+      }
+    },
+    {
+      "index": 18,
+      "nama": "Aurelia Celestia",
+      "preview": "Aurelia Celestia | 2 ulasan | ",
+      "dump": {
+        "allButtons": [
+          {
+            "ariaLabel": "Foto Aurelia Celestia",
+            "className": "WEBjve",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "al6Kxe",
+            "dataPhotoIndex": null,
+            "text": "Aurelia Celestia\n2 ulasan"
+          },
+          {
+            "ariaLabel": "Tindakan untuk ulasan Aurelia Celestia",
+            "className": "PP3Y3d S1qRNe",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": "Lihat lainnya",
+            "className": "w8nwRe kyuRq",
+            "dataPhotoIndex": null,
+            "text": "Lainnya"
+          },
+          {
+            "ariaLabel": null,
+            "className": "kyuRq fontTitleSmall WOKzJe",
+            "dataPhotoIndex": null,
+            "text": "Lihat terjemahan (Indonesia)"
+          },
+          {
+            "ariaLabel": "Suka",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nSuka"
+          },
+          {
+            "ariaLabel": "Bagikan ulasan Aurelia Celestia.",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nBagikan"
+          }
+        ],
+        "allImages": [
+          {
+            "alt": "",
+            "className": "NBa7we",
+            "height": 32,
+            "parentClass": "WEBjve",
+            "src": "https://lh3.googleusercontent.com/a/ACg8ocJJ78b6RRoxeXXD65ciFwADFBrKRsvjr2crJXMXmACasP3oCA=w54-h54-p-rp-mo-br100",
+            "width": 32
+          }
+        ],
+        "cardHTMLSize": 5061,
+        "photoIndexButtons": [],
+        "photoLikeElements": [],
+        "totalButtons": 7,
+        "totalImages": 1,
+        "totalLinks": 0
+      }
+    },
+    {
+      "index": 19,
+      "nama": "後藤駿介",
+      "preview": "後藤駿介 | Local Guide · 22 ulasan · 26 foto | ",
+      "dump": {
+        "allButtons": [
+          {
+            "ariaLabel": "Foto 後藤駿介",
+            "className": "WEBjve",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "al6Kxe",
+            "dataPhotoIndex": null,
+            "text": "後藤駿介\nLocal Guide · 22 ulasan ·"
+          },
+          {
+            "ariaLabel": "Tindakan untuk ulasan 後藤駿介",
+            "className": "PP3Y3d S1qRNe",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": "Lihat lainnya",
+            "className": "w8nwRe kyuRq",
+            "dataPhotoIndex": null,
+            "text": "Lainnya"
+          },
+          {
+            "ariaLabel": null,
+            "className": "kyuRq fontTitleSmall WOKzJe",
+            "dataPhotoIndex": null,
+            "text": "Lihat terjemahan (Indonesia)"
+          },
+          {
+            "ariaLabel": "Suka",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nSuka"
+          },
+          {
+            "ariaLabel": "Bagikan ulasan 後藤駿介.",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nBagikan"
+          }
+        ],
+        "allImages": [
+          {
+            "alt": "",
+            "className": "NBa7we",
+            "height": 32,
+            "parentClass": "WEBjve",
+            "src": "https://lh3.googleusercontent.com/a/ACg8ocLiByGpoQe-emqXUpQr5RGM7l__QKchpQM0l0zcTAicax6S9Q=w54-h54-p-rp-mo-ba12-br100",
+            "width": 32
+          }
+        ],
+        "cardHTMLSize": 5108,
+        "photoIndexButtons": [],
+        "photoLikeElements": [],
+        "totalButtons": 7,
+        "totalImages": 1,
+        "totalLinks": 0
+      }
+    },
+    {
+      "index": 20,
+      "nama": "An nieza dea Versary",
+      "preview": "An nieza dea Versary | 3 ulasan | ",
+      "dump": {
+        "allButtons": [
+          {
+            "ariaLabel": "Foto An nieza dea Versary",
+            "className": "WEBjve",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "al6Kxe",
+            "dataPhotoIndex": null,
+            "text": "An nieza dea Versary\n3 ulasan"
+          },
+          {
+            "ariaLabel": "Tindakan untuk ulasan An nieza dea Versary",
+            "className": "PP3Y3d S1qRNe",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": "Suka",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nSuka"
+          },
+          {
+            "ariaLabel": "Bagikan ulasan An nieza dea Versary.",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nBagikan"
+          }
+        ],
+        "allImages": [
+          {
+            "alt": "",
+            "className": "NBa7we",
+            "height": 32,
+            "parentClass": "WEBjve",
+            "src": "https://lh3.googleusercontent.com/a/ACg8ocKFzqFt18svXJsWp1etMMBUDqChVdO67Usc1FxAiMn7TU4Hkg=w54-h54-p-rp-mo-br100",
+            "width": 32
+          }
+        ],
+        "cardHTMLSize": 4309,
+        "photoIndexButtons": [],
+        "photoLikeElements": [],
+        "totalButtons": 5,
+        "totalImages": 1,
+        "totalLinks": 0
+      }
+    },
+    {
+      "index": 21,
+      "nama": "Nina Tazqiah",
+      "preview": "Nina Tazqiah | Local Guide · 24 ulasan · 31 foto | ",
+      "dump": {
+        "allButtons": [
+          {
+            "ariaLabel": "Foto Nina Tazqiah",
+            "className": "WEBjve",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "al6Kxe",
+            "dataPhotoIndex": null,
+            "text": "Nina Tazqiah\nLocal Guide · 24 "
+          },
+          {
+            "ariaLabel": "Tindakan untuk ulasan Nina Tazqiah",
+            "className": "PP3Y3d S1qRNe",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": "Lihat lainnya",
+            "className": "w8nwRe kyuRq",
+            "dataPhotoIndex": null,
+            "text": "Lainnya"
+          },
+          {
+            "ariaLabel": null,
+            "className": "kyuRq fontTitleSmall WOKzJe",
+            "dataPhotoIndex": null,
+            "text": "Lihat terjemahan (Indonesia)"
+          },
+          {
+            "ariaLabel": "Suka",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nSuka"
+          },
+          {
+            "ariaLabel": "Bagikan ulasan Nina Tazqiah.",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nBagikan"
+          }
+        ],
+        "allImages": [
+          {
+            "alt": "",
+            "className": "NBa7we",
+            "height": 32,
+            "parentClass": "WEBjve",
+            "src": "https://lh3.googleusercontent.com/a-/ALV-UjWia9O1ca4sbhl2NPdRKGo8Um2uCzbJb7DMdiPl2BENNjbzxyP1=w54-h54-p-rp-mo-ba12-br100",
+            "width": 32
+          }
+        ],
+        "cardHTMLSize": 5082,
+        "photoIndexButtons": [],
+        "photoLikeElements": [],
+        "totalButtons": 7,
+        "totalImages": 1,
+        "totalLinks": 0
+      }
+    },
+    {
+      "index": 22,
+      "nama": "Ahmad Kid",
+      "preview": "Ahmad Kid | Local Guide · 17 ulasan · 15 foto | ",
+      "dump": {
+        "allButtons": [
+          {
+            "ariaLabel": "Foto Ahmad Kid",
+            "className": "WEBjve",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "al6Kxe",
+            "dataPhotoIndex": null,
+            "text": "Ahmad Kid\nLocal Guide · 17 ula"
+          },
+          {
+            "ariaLabel": "Tindakan untuk ulasan Ahmad Kid",
+            "className": "PP3Y3d S1qRNe",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": "Foto 1 di ulasan Ahmad Kid",
+            "className": "Tya61d",
+            "dataPhotoIndex": "0",
+            "text": ""
+          },
+          {
+            "ariaLabel": "Suka",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nSuka"
+          },
+          {
+            "ariaLabel": "Bagikan ulasan Ahmad Kid.",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nBagikan"
+          }
+        ],
+        "allImages": [
+          {
+            "alt": "",
+            "className": "NBa7we",
+            "height": 32,
+            "parentClass": "WEBjve",
+            "src": "https://lh3.googleusercontent.com/a-/ALV-UjXBOja85TvLPz_jlsg7ZCDLQ9SoPHhEMHIgRarlBTOcV91A-g4DaA=w54-h54-p-rp-mo-ba12-br1",
+            "width": 32
+          }
+        ],
+        "cardHTMLSize": 4995,
+        "photoIndexButtons": [
+          {
+            "ariaLabel": "Foto 1 di ulasan Ahmad Kid",
+            "className": "Tya61d",
+            "index": "0",
+            "rect": {
+              "h": 302,
+              "w": 402
+            },
+            "tag": "BUTTON"
+          }
+        ],
+        "photoLikeElements": [],
+        "totalButtons": 6,
+        "totalImages": 1,
+        "totalLinks": 0
+      }
+    },
+    {
+      "index": 23,
+      "nama": "Ali Afif",
+      "preview": "Ali Afif | Local Guide · 145 ulasan · 671 foto | ",
+      "dump": {
+        "allButtons": [
+          {
+            "ariaLabel": "Foto Ali Afif",
+            "className": "WEBjve",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "al6Kxe",
+            "dataPhotoIndex": null,
+            "text": "Ali Afif\nLocal Guide · 145 ula"
+          },
+          {
+            "ariaLabel": "Tindakan untuk ulasan Ali Afif",
+            "className": "PP3Y3d S1qRNe",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": "Foto 1 di ulasan Ali Afif",
+            "className": "Tya61d",
+            "dataPhotoIndex": "0",
+            "text": ""
+          },
+          {
+            "ariaLabel": "Foto 2 di ulasan Ali Afif",
+            "className": "Tya61d",
+            "dataPhotoIndex": "1",
+            "text": ""
+          },
+          {
+            "ariaLabel": "Foto 3 di ulasan Ali Afif",
+            "className": "Tya61d",
+            "dataPhotoIndex": "2",
+            "text": ""
+          },
+          {
+            "ariaLabel": "+ 2 foto lainnya di ulasan Ali Afif",
+            "className": "Tya61d",
+            "dataPhotoIndex": "3",
+            "text": "+2"
+          },
+          {
+            "ariaLabel": "Suka",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nSuka"
+          },
+          {
+            "ariaLabel": "Bagikan ulasan Ali Afif.",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nBagikan"
+          }
+        ],
+        "allImages": [
+          {
+            "alt": "",
+            "className": "NBa7we",
+            "height": 32,
+            "parentClass": "WEBjve",
+            "src": "https://lh3.googleusercontent.com/a-/ALV-UjUhbK_qmlJVDnqeDb05XXDJu1TtD5Vw6yDtZE8PIbZvxUSU6KQA8w=w54-h54-p-rp-mo-ba12-br1",
+            "width": 32
+          }
+        ],
+        "cardHTMLSize": 6651,
+        "photoIndexButtons": [
+          {
+            "ariaLabel": "Foto 1 di ulasan Ali Afif",
+            "className": "Tya61d",
+            "index": "0",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "Foto 2 di ulasan Ali Afif",
+            "className": "Tya61d",
+            "index": "1",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "Foto 3 di ulasan Ali Afif",
+            "className": "Tya61d",
+            "index": "2",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "+ 2 foto lainnya di ulasan Ali Afif",
+            "className": "Tya61d",
+            "index": "3",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          }
+        ],
+        "photoLikeElements": [],
+        "totalButtons": 9,
+        "totalImages": 1,
+        "totalLinks": 0
+      }
+    },
+    {
+      "index": 24,
+      "nama": "Joey KETHA",
+      "preview": "Joey KETHA | Local Guide · 25 ulasan · 8 foto | ",
+      "dump": {
+        "allButtons": [
+          {
+            "ariaLabel": "Foto Joey KETHA",
+            "className": "WEBjve",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "al6Kxe",
+            "dataPhotoIndex": null,
+            "text": "Joey KETHA\nLocal Guide · 25 ul"
+          },
+          {
+            "ariaLabel": "Tindakan untuk ulasan Joey KETHA",
+            "className": "PP3Y3d S1qRNe",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": "Lihat lainnya",
+            "className": "w8nwRe kyuRq",
+            "dataPhotoIndex": null,
+            "text": "Lainnya"
+          },
+          {
+            "ariaLabel": null,
+            "className": "kyuRq fontTitleSmall WOKzJe",
+            "dataPhotoIndex": null,
+            "text": "Lihat terjemahan (Indonesia)"
+          },
+          {
+            "ariaLabel": "Suka",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nSuka"
+          },
+          {
+            "ariaLabel": "Bagikan ulasan Joey KETHA.",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nBagikan"
+          }
+        ],
+        "allImages": [
+          {
+            "alt": "",
+            "className": "NBa7we",
+            "height": 32,
+            "parentClass": "WEBjve",
+            "src": "https://lh3.googleusercontent.com/a-/ALV-UjUe6G1_UvTdlOvXXJ2aX5mdpNePoQehhAd8eNvInl6Qh5nztYJDJQ=w54-h54-p-rp-mo-ba12-br1",
+            "width": 32
+          }
+        ],
+        "cardHTMLSize": 5050,
+        "photoIndexButtons": [],
+        "photoLikeElements": [],
+        "totalButtons": 7,
+        "totalImages": 1,
+        "totalLinks": 0
+      }
+    },
+    {
+      "index": 25,
+      "nama": "Vaji Nasution",
+      "preview": "Vaji Nasution | Local Guide · 52 ulasan · 114 foto | ",
+      "dump": {
+        "allButtons": [
+          {
+            "ariaLabel": "Foto Vaji Nasution",
+            "className": "WEBjve",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "al6Kxe",
+            "dataPhotoIndex": null,
+            "text": "Vaji Nasution\nLocal Guide · 52"
+          },
+          {
+            "ariaLabel": "Tindakan untuk ulasan Vaji Nasution",
+            "className": "PP3Y3d S1qRNe",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "kyuRq fontTitleSmall WOKzJe",
+            "dataPhotoIndex": null,
+            "text": "Lihat terjemahan (Indonesia)"
+          },
+          {
+            "ariaLabel": "Foto 1 di ulasan Vaji Nasution",
+            "className": "Tya61d",
+            "dataPhotoIndex": "0",
+            "text": ""
+          },
+          {
+            "ariaLabel": "Foto 2 di ulasan Vaji Nasution",
+            "className": "Tya61d",
+            "dataPhotoIndex": "1",
+            "text": ""
+          },
+          {
+            "ariaLabel": "Foto 3 di ulasan Vaji Nasution",
+            "className": "Tya61d",
+            "dataPhotoIndex": "2",
+            "text": ""
+          },
+          {
+            "ariaLabel": "Suka",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nSuka"
+          },
+          {
+            "ariaLabel": "Bagikan ulasan Vaji Nasution.",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nBagikan"
+          }
+        ],
+        "allImages": [
+          {
+            "alt": "",
+            "className": "NBa7we",
+            "height": 32,
+            "parentClass": "WEBjve",
+            "src": "https://lh3.googleusercontent.com/a-/ALV-UjUEBSuXoFQ9zqFT-ZC3j-4UtzpKpovFVl_aaiHIkdAy7CjKGvlJ=w54-h54-p-rp-mo-ba12-br100",
+            "width": 32
+          }
+        ],
+        "cardHTMLSize": 6435,
+        "photoIndexButtons": [
+          {
+            "ariaLabel": "Foto 1 di ulasan Vaji Nasution",
+            "className": "Tya61d",
+            "index": "0",
+            "rect": {
+              "h": 302,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "Foto 2 di ulasan Vaji Nasution",
+            "className": "Tya61d",
+            "index": "1",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "Foto 3 di ulasan Vaji Nasution",
+            "className": "Tya61d",
+            "index": "2",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          }
+        ],
+        "photoLikeElements": [],
+        "totalButtons": 9,
+        "totalImages": 1,
+        "totalLinks": 0
+      }
+    },
+    {
+      "index": 26,
+      "nama": "mister trump",
+      "preview": "mister trump | 3 ulasan | ",
+      "dump": {
+        "allButtons": [
+          {
+            "ariaLabel": "Foto mister trump",
+            "className": "WEBjve",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "al6Kxe",
+            "dataPhotoIndex": null,
+            "text": "mister trump\n3 ulasan"
+          },
+          {
+            "ariaLabel": "Tindakan untuk ulasan mister trump",
+            "className": "PP3Y3d S1qRNe",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": "1 suka",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\n1"
+          },
+          {
+            "ariaLabel": "Bagikan ulasan mister trump.",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nBagikan"
+          }
+        ],
+        "allImages": [
+          {
+            "alt": "",
+            "className": "NBa7we",
+            "height": 32,
+            "parentClass": "WEBjve",
+            "src": "https://lh3.googleusercontent.com/a/ACg8ocL62GVyj1UswmFEnEKjWyOLT6virg1g8mhRSplBcZuf_hNi2w=w54-h54-p-rp-mo-br100",
+            "width": 32
+          }
+        ],
+        "cardHTMLSize": 4250,
+        "photoIndexButtons": [],
+        "photoLikeElements": [],
+        "totalButtons": 5,
+        "totalImages": 1,
+        "totalLinks": 0
+      }
+    },
+    {
+      "index": 27,
+      "nama": "Genta",
+      "preview": "Genta | Local Guide · 1.718 ulasan · 23.344 foto | ",
+      "dump": {
+        "allButtons": [
+          {
+            "ariaLabel": "Foto Genta",
+            "className": "WEBjve",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "al6Kxe",
+            "dataPhotoIndex": null,
+            "text": "Genta\nLocal Guide · 1.718 ulas"
+          },
+          {
+            "ariaLabel": "Tindakan untuk ulasan Genta",
+            "className": "PP3Y3d S1qRNe",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "kyuRq fontTitleSmall WOKzJe",
+            "dataPhotoIndex": null,
+            "text": "Lihat terjemahan (Indonesia)"
+          },
+          {
+            "ariaLabel": "Video",
+            "className": "Tya61d",
+            "dataPhotoIndex": "0",
+            "text": "0:03"
+          },
+          {
+            "ariaLabel": "Video",
+            "className": "Tya61d",
+            "dataPhotoIndex": "1",
+            "text": "0:05"
+          },
+          {
+            "ariaLabel": "Video",
+            "className": "Tya61d",
+            "dataPhotoIndex": "2",
+            "text": "0:01"
+          },
+          {
+            "ariaLabel": "+ 5 foto lainnya di ulasan Genta",
+            "className": "Tya61d",
+            "dataPhotoIndex": "3",
+            "text": "0:15\n+5"
+          },
+          {
+            "ariaLabel": "Suka",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nSuka"
+          },
+          {
+            "ariaLabel": "Bagikan ulasan Genta.",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nBagikan"
+          }
+        ],
+        "allImages": [
+          {
+            "alt": "",
+            "className": "NBa7we",
+            "height": 32,
+            "parentClass": "WEBjve",
+            "src": "https://lh3.googleusercontent.com/a-/ALV-UjW8t7xK4a_YghQKADughmJgcm50hVTbRIIDhSYIjd8eAi5Jcaxkwg=w54-h54-p-rp-mo-ba12-br1",
+            "width": 32
+          }
+        ],
+        "cardHTMLSize": 7250,
+        "photoIndexButtons": [
+          {
+            "ariaLabel": "Video",
+            "className": "Tya61d",
+            "index": "0",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "Video",
+            "className": "Tya61d",
+            "index": "1",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "Video",
+            "className": "Tya61d",
+            "index": "2",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "+ 5 foto lainnya di ulasan Genta",
+            "className": "Tya61d",
+            "index": "3",
+            "rect": {
+              "h": 150,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          }
+        ],
+        "photoLikeElements": [],
+        "totalButtons": 10,
+        "totalImages": 1,
+        "totalLinks": 0
+      }
+    },
+    {
+      "index": 28,
+      "nama": "Addo P",
+      "preview": "Addo P | Local Guide · 18 ulasan · 26 foto | ",
+      "dump": {
+        "allButtons": [
+          {
+            "ariaLabel": "Foto Addo P",
+            "className": "WEBjve",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "al6Kxe",
+            "dataPhotoIndex": null,
+            "text": "Addo P\nLocal Guide · 18 ulasan"
+          },
+          {
+            "ariaLabel": "Tindakan untuk ulasan Addo P",
+            "className": "PP3Y3d S1qRNe",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "kyuRq fontTitleSmall WOKzJe",
+            "dataPhotoIndex": null,
+            "text": "Lihat terjemahan (Indonesia)"
+          },
+          {
+            "ariaLabel": "Foto 1 di ulasan Addo P",
+            "className": "Tya61d",
+            "dataPhotoIndex": "0",
+            "text": ""
+          },
+          {
+            "ariaLabel": "Foto 2 di ulasan Addo P",
+            "className": "Tya61d",
+            "dataPhotoIndex": "1",
+            "text": ""
+          },
+          {
+            "ariaLabel": "Suka",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nSuka"
+          },
+          {
+            "ariaLabel": "Bagikan ulasan Addo P.",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nBagikan"
+          }
+        ],
+        "allImages": [
+          {
+            "alt": "",
+            "className": "NBa7we",
+            "height": 32,
+            "parentClass": "WEBjve",
+            "src": "https://lh3.googleusercontent.com/a/ACg8ocKaFXDDh2jNjazU9RQ8PKnimZkx4Jz4oGKRv3HYyLtBRV5u4A0=w54-h54-p-rp-mo-ba12-br100",
+            "width": 32
+          }
+        ],
+        "cardHTMLSize": 5719,
+        "photoIndexButtons": [
+          {
+            "ariaLabel": "Foto 1 di ulasan Addo P",
+            "className": "Tya61d",
+            "index": "0",
+            "rect": {
+              "h": 302,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          },
+          {
+            "ariaLabel": "Foto 2 di ulasan Addo P",
+            "className": "Tya61d",
+            "index": "1",
+            "rect": {
+              "h": 302,
+              "w": 200
+            },
+            "tag": "BUTTON"
+          }
+        ],
+        "photoLikeElements": [],
+        "totalButtons": 8,
+        "totalImages": 1,
+        "totalLinks": 0
+      }
+    },
+    {
+      "index": 29,
+      "nama": "Shela Rizky",
+      "preview": "Shela Rizky | Local Guide · 20 ulasan · 40 foto | ",
+      "dump": {
+        "allButtons": [
+          {
+            "ariaLabel": "Foto Shela Rizky",
+            "className": "WEBjve",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "al6Kxe",
+            "dataPhotoIndex": null,
+            "text": "Shela Rizky\nLocal Guide · 20 u"
+          },
+          {
+            "ariaLabel": "Tindakan untuk ulasan Shela Rizky",
+            "className": "PP3Y3d S1qRNe",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": "Suka",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nSuka"
+          },
+          {
+            "ariaLabel": "Bagikan ulasan Shela Rizky.",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nBagikan"
+          }
+        ],
+        "allImages": [
+          {
+            "alt": "",
+            "className": "NBa7we",
+            "height": 32,
+            "parentClass": "WEBjve",
+            "src": "https://lh3.googleusercontent.com/a-/ALV-UjWfqkAU_W-1EB_34dtb77xDJCh5zEgPxuomq5FnsKsIOx4boWsefw=w54-h54-p-rp-mo-ba12-br1",
+            "width": 32
+          }
+        ],
+        "cardHTMLSize": 4217,
+        "photoIndexButtons": [],
+        "photoLikeElements": [],
+        "totalButtons": 5,
+        "totalImages": 1,
+        "totalLinks": 0
+      }
+    },
+    {
+      "index": 30,
+      "nama": "komo komo",
+      "preview": "komo komo | Local Guide · 94 ulasan · 44 foto | ",
+      "dump": {
+        "allButtons": [
+          {
+            "ariaLabel": "Foto komo komo",
+            "className": "WEBjve",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "al6Kxe",
+            "dataPhotoIndex": null,
+            "text": "komo komo\nLocal Guide · 94 ula"
+          },
+          {
+            "ariaLabel": "Tindakan untuk ulasan komo komo",
+            "className": "PP3Y3d S1qRNe",
+            "dataPhotoIndex": null,
+            "text": ""
+          },
+          {
+            "ariaLabel": null,
+            "className": "kyuRq fontTitleSmall WOKzJe",
+            "dataPhotoIndex": null,
+            "text": "Lihat terjemahan (Indonesia)"
+          },
+          {
+            "ariaLabel": "Suka",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nSuka"
+          },
+          {
+            "ariaLabel": "Bagikan ulasan komo komo.",
+            "className": "gllhef",
+            "dataPhotoIndex": null,
+            "text": "\nBagikan"
+          }
+        ],
+        "allImages": [
+          {
+            "alt": "",
+            "className": "NBa7we",
+            "height": 32,
+            "parentClass": "WEBjve",
+            "src": "https://lh3.googleusercontent.com/a/ACg8ocKZuuPbrrTLZvVfO_lGSCJJ4VFUiTow5fFlb4B1x8xGsEVRKQ=w54-h54-p-rp-mo-ba12-br100",
+            "width": 32
+          }
+        ],
+        "cardHTMLSize": 4769,
+        "photoIndexButtons": [],
+        "photoLikeElements": [],
+        "totalButtons": 6,
+        "totalImages": 1,
+        "totalLinks": 0
+      }
+    }
+  ]
+}

@@ -3,16 +3,21 @@
    ========================================================= */
 document.addEventListener("DOMContentLoaded", () => {
     const btnMulai = document.getElementById('btnMulai');
-    
-    // Cek apakah kita sedang di halaman Landing Page
+
     if (btnMulai) {
-        btnMulai.addEventListener('click', function() {
+        btnMulai.addEventListener('click', function () {
             const port = document.getElementById('selectPelabuhan').value;
             const from = document.getElementById('indexTanggalFrom').value;
             const to   = document.getElementById('indexTanggalTo').value;
 
-            // Simpan ke localStorage agar dibaca oleh Dashboard
-            localStorage.setItem('selectedPelabuhan', port);
+            if (from && to && from > to) {
+                alert("Tanggal awal tidak boleh setelah tanggal akhir.");
+                return;
+            }
+
+            // Simpan sebagai array JSON agar kompatibel dengan dashboard multi-select
+            let portsArr = port === "ALL" ? ["ALL"] : [port];
+            localStorage.setItem('selectedPorts', JSON.stringify(portsArr));
             localStorage.setItem('filterTanggalFrom', from || '');
             localStorage.setItem('filterTanggalTo',   to   || '');
         });
@@ -23,16 +28,35 @@ document.addEventListener("DOMContentLoaded", () => {
 /* =========================================================
    LOGIKA DASHBOARD
    ========================================================= */
-let allReviewData = [];
-let currentFilteredData = [];
+let selectedPorts = []; 
+let rawReviewData = []; 
+let processedReviewData = []; 
 
-// Instance Chart.js
 let chartDonut = null;
 let chartPopularitas = null;
 let chartRatingVolume = null;
 let chartTrenVolume = null;
 let chartTrenAspek = null;
 let chartAspekStacked = null;
+
+// Palet warna yang konsisten untuk grafik perbandingan
+const PORT_COLORS = {
+    "Batam Centre": "#0D47A1",
+    "Harbour Bay": "#1976D2",
+    "Telaga Punggur": "#42A5F5",
+    "Nongsapura": "#90CAF9",
+    "Sekupang": "#E3F2FD",
+    "Default": "#2196F3"
+};
+
+function getColorForPort(portName) {
+    for (const key in PORT_COLORS) {
+        if (portName.toLowerCase().includes(key.toLowerCase())) {
+            return PORT_COLORS[key];
+        }
+    }
+    return PORT_COLORS["Default"];
+}
 
 /* ============ Navigasi SPA ============ */
 function switchPage(pageId, element) {
@@ -47,7 +71,6 @@ function switchPage(pageId, element) {
     element.classList.remove('text-muted');
     element.classList.add('active');
 
-    // Render ulang Chart.js saat halaman dibuka
     if (pageId === 'popularitas') { renderChartPopularitas(); renderChartRatingVolume(); }
     if (pageId === 'tren') { renderChartTrenVolume(); renderChartTrenAspek(); }
     if (pageId === 'aspek') { renderChartAspekStacked(); }
@@ -56,92 +79,170 @@ function switchPage(pageId, element) {
 /* ============ Inisialisasi Dashboard ============ */
 document.addEventListener("DOMContentLoaded", () => {
     const tableBody = document.getElementById("tableBody");
-    
-    // Cek apakah kita sedang di halaman Dashboard (ada tabel)
+    const portSelect = document.getElementById("filterPelabuhanSelect");
+
     if (tableBody) {
-        const savedPort = localStorage.getItem("selectedPelabuhan");
+        const savedPortsStr = localStorage.getItem("selectedPorts");
         const savedFrom = localStorage.getItem("filterTanggalFrom");
         const savedTo   = localStorage.getItem("filterTanggalTo");
-        
-        if (savedPort) document.getElementById("filterPelabuhan").value = savedPort;
+
+        if (savedPortsStr) {
+            try { selectedPorts = JSON.parse(savedPortsStr); } 
+            catch (e) { selectedPorts = []; }
+        }
+        if (!selectedPorts || selectedPorts.length === 0) {
+            selectedPorts = ["ALL"]; 
+        }
+
         if (savedFrom) document.getElementById("filterTanggalFrom").value = savedFrom;
-        if (savedTo)   document.getElementById("filterTanggalTo").value = savedTo;
-        
-        loadTableData();
+        if (savedTo)   document.getElementById("filterTanggalTo").value   = savedTo;
+
+        renderPortChips();
+        loadAllData(); // Memanggil API untuk raw & processed
+
+        if (portSelect) {
+            portSelect.addEventListener('change', function() {
+                const val = this.value;
+                if (!val) return;
+
+                if (val === "ALL") {
+                    selectedPorts = ["ALL"];
+                } else {
+                    selectedPorts = selectedPorts.filter(p => p !== "ALL");
+                    if (!selectedPorts.includes(val)) {
+                        selectedPorts.push(val);
+                    }
+                }
+                
+                this.value = ""; 
+                updateFilterState();
+            });
+        }
     }
 });
 
-async function loadTableData() {
-    try {
-        const res = await fetch("/get-data");
-        const result = await res.json();
-        if (result.status !== "success" || !result.data) {
-            allReviewData = []; applyPelabuhanFilter(); return;
-        }
-        allReviewData = result.data;
-        applyPelabuhanFilter();
-    } catch (err) { console.error("Gagal memuat data:", err); }
+/* ============ Manajemen Multi-Select ============ */
+function renderPortChips() {
+    const container = document.getElementById("selectedPortsContainer");
+    if (!container) return;
+    
+    container.innerHTML = "";
+    
+    if (selectedPorts.length === 0 || (selectedPorts.length === 1 && selectedPorts[0] === "ALL")) {
+        container.innerHTML = `<span class="badge bg-secondary opacity-75">Semua Pelabuhan (Default)</span>`;
+        return;
+    }
+
+    selectedPorts.forEach(port => {
+        const chip = document.createElement("div");
+        chip.className = "port-chip";
+        chip.innerHTML = `
+            ${port}
+            <span class="remove-chip" onclick="removePort('${port}')">&times;</span>
+        `;
+        container.appendChild(chip);
+    });
 }
 
-function applyFilter() { applyPelabuhanFilter(); }
+function removePort(portToRemove) {
+    selectedPorts = selectedPorts.filter(p => p !== portToRemove);
+    if (selectedPorts.length === 0) selectedPorts = ["ALL"];
+    updateFilterState();
+}
+
+function clearAllPorts() {
+    selectedPorts = ["ALL"];
+    updateFilterState();
+}
 
 function resetTanggalFilter() {
     document.getElementById("filterTanggalFrom").value = "";
     document.getElementById("filterTanggalTo").value = "";
-    localStorage.removeItem("filterTanggalFrom");
-    localStorage.removeItem("filterTanggalTo");
-    applyPelabuhanFilter();
+    updateFilterState();
 }
 
-function applyPelabuhanFilter() {
-    const selectedPort = document.getElementById("filterPelabuhan").value;
+function updateFilterState() {
     const fromISO = document.getElementById("filterTanggalFrom").value || null;
     const toISO   = document.getElementById("filterTanggalTo").value || null;
 
-    if (fromISO) localStorage.setItem("filterTanggalFrom", fromISO);
-    if (toISO)   localStorage.setItem("filterTanggalTo", toISO);
-
-    let filteredList = allReviewData;
-    if (selectedPort !== "ALL") {
-        const needle = selectedPort.toLowerCase();
-        filteredList = filteredList.filter(row => (row.lokasi || "").toLowerCase().includes(needle) || (row.pelabuhan || "").toLowerCase().includes(needle));
+    if (fromISO && toISO && fromISO > toISO) {
+        alert("Tanggal awal tidak boleh setelah tanggal akhir.");
+        return;
     }
 
-    if (fromISO || toISO) {
-        filteredList = filteredList.filter(row => {
-            const dISO = getReviewDateISO(row);
-            if (!dISO) return false;
-            if (fromISO && dISO < fromISO) return false;
-            if (toISO   && dISO > toISO)   return false;
-            return true;
-        });
+    localStorage.setItem("selectedPorts", JSON.stringify(selectedPorts));
+    localStorage.setItem("filterTanggalFrom", fromISO || "");
+    localStorage.setItem("filterTanggalTo",   toISO   || "");
+
+    renderPortChips();
+    loadAllData(); // Fetch ulang data dari API karena filter berubah
+}
+
+/* ============ Pemanggilan Data ============ */
+async function loadAllData() {
+    try {
+        const portsParam = selectedPorts.includes("ALL") ? "" : selectedPorts.join(",");
+        const fromParam = document.getElementById("filterTanggalFrom").value || "";
+        const toParam = document.getElementById("filterTanggalTo").value || "";
+        
+        const qs = `?ports=${encodeURIComponent(portsParam)}&from=${fromParam}&to=${toParam}`;
+
+        // Fetch RAW Data (Untuk Rating & Volume)
+        const resRaw = await fetch(`/get-data${qs}&source=raw`);
+        const resultRaw = await resRaw.json();
+        
+        // Fetch PROCESSED Data (Untuk Sentimen & NLP)
+        const resProc = await fetch(`/get-data${qs}&source=processed`);
+        const resultProc = await resProc.json();
+
+        if (resultRaw.status === "success" && resultRaw.raw) {
+            rawReviewData = resultRaw.raw;
+        } else {
+            console.warn("Gagal memuat data raw:", resultRaw.raw_error);
+            rawReviewData = [];
+        }
+
+        if (resultProc.status === "success" && resultProc.processed) {
+            processedReviewData = resultProc.processed;
+            if (resultProc.warning) console.warn(resultProc.warning);
+        } else {
+             console.warn("Gagal memuat data processed:", resultProc.processed_error);
+             processedReviewData = [];
+        }
+
+        applyFiltersToData(); 
+    } catch (err) {
+        console.error("Gagal memuat keseluruhan data:", err);
     }
+}
 
-    currentFilteredData = filteredList;
-    renderFilteredData(filteredList);
+function applyFiltersToData() {
+    renderFilteredData(processedReviewData, rawReviewData);
 
-    // Render Chart.js
-    try { renderChartDonut(); } catch(e) { console.error("Error Donut:", e); }
-    try { renderChartPopularitas(); } catch(e) { console.error("Error Popularitas:", e); }
-    try { renderChartRatingVolume(); } catch(e) { console.error("Error Rating:", e); }
-    try { renderChartTrenVolume(); } catch(e) { console.error("Error Tren Volume:", e); }
-    try { renderChartTrenAspek(); } catch(e) { console.error("Error Tren Aspek:", e); }
-    try { renderChartAspekStacked(); } catch(e) { console.error("Error Aspek Stacked:", e); }
+    try { renderChartDonut(); } catch (e) { console.error("Error Donut:", e); }
+    try { renderChartPopularitas(); } catch (e) { console.error("Error Popularitas:", e); }
+    try { renderChartRatingVolume(); } catch (e) { console.error("Error Rating:", e); }
+    try { renderChartTrenVolume(); } catch (e) { console.error("Error Tren Volume:", e); }
+    try { renderChartTrenAspek(); } catch (e) { console.error("Error Tren Aspek:", e); }
+    try { renderChartAspekStacked(); } catch (e) { console.error("Error Aspek Stacked:", e); }
 
-    // Fetch 3 Gambar Python
-    refreshChartsFromPython(selectedPort, fromISO, toISO);
+    const portsParam = selectedPorts.includes("ALL") ? "" : selectedPorts.join(",");
+    const fromParam = document.getElementById("filterTanggalFrom").value || "";
+    const toParam = document.getElementById("filterTanggalTo").value || "";
+    refreshChartsFromPython(portsParam, fromParam, toParam);
 }
 
 /* ============ 1. RENDER CHART.JS ============ */
 function renderChartDonut() {
-    const pos = currentFilteredData.filter(r => getSentiment(r) === "POSITIF").length;
-    const net = currentFilteredData.filter(r => getSentiment(r) === "NETRAL").length;
-    const neg = currentFilteredData.filter(r => getSentiment(r) === "NEGATIF").length;
+    const dataToUse = processedReviewData;
+    const pos = dataToUse.filter(r => getSentiment(r) === "POSITIF").length;
+    const net = dataToUse.filter(r => getSentiment(r) === "NETRAL").length;
+    const neg = dataToUse.filter(r => getSentiment(r) === "NEGATIF").length;
 
     const ctx = document.getElementById('sentimentChart');
     if (!ctx) return;
     if (chartDonut) chartDonut.destroy();
-    
+
     chartDonut = new Chart(ctx, {
         type: 'doughnut',
         data: {
@@ -155,23 +256,30 @@ function renderChartDonut() {
 function renderChartPopularitas() {
     const ctx = document.getElementById('chartPopularitas');
     if (!ctx) return;
-    
+
+    const dataToUse = rawReviewData;
     const counts = {};
-    currentFilteredData.forEach(r => {
+    dataToUse.forEach(r => {
         const p = getPortName(r);
         counts[p] = (counts[p] || 0) + 1;
     });
+
     const labels = Object.keys(counts);
     const data = Object.values(counts);
+    const bgColors = labels.map(label => getColorForPort(label));
 
     if (chartPopularitas) chartPopularitas.destroy();
     chartPopularitas = new Chart(ctx, {
         type: 'bar',
         data: {
             labels: labels,
-            datasets: [{ label: 'Jumlah Ulasan', data: data, backgroundColor: '#2196F3' }]
+            datasets: [{ label: 'Jumlah Ulasan (Total)', data: data, backgroundColor: bgColors }]
         },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: { 
+            responsive: true, 
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } }
+        }
     });
 }
 
@@ -179,8 +287,9 @@ function renderChartRatingVolume() {
     const ctx = document.getElementById('chartRatingVsVolume');
     if (!ctx) return;
 
+    const dataToUse = rawReviewData;
     const agg = {};
-    currentFilteredData.forEach(r => {
+    dataToUse.forEach(r => {
         const p = getPortName(r);
         const rat = parseFloat(r.rating);
         if (!isNaN(rat)) {
@@ -189,20 +298,25 @@ function renderChartRatingVolume() {
         }
     });
 
-    const dataPts = Object.keys(agg).map(p => ({
-        x: agg[p].count, y: (agg[p].sum / agg[p].count).toFixed(1), label: p
+    // Buat array dataset (multi-seri) untuk scatter plot
+    const datasets = Object.keys(agg).map(p => ({
+        label: p,
+        data: [{ x: agg[p].count, y: parseFloat((agg[p].sum / agg[p].count).toFixed(1)) }],
+        backgroundColor: getColorForPort(p),
+        pointRadius: 8
     }));
 
     if (chartRatingVolume) chartRatingVolume.destroy();
     chartRatingVolume = new Chart(ctx, {
         type: 'scatter',
-        data: {
-            datasets: [{ label: 'Pelabuhan', data: dataPts, backgroundColor: '#0D47A1', pointRadius: 8 }]
-        },
-        options: { 
+        data: { datasets: datasets },
+        options: {
             responsive: true, maintainAspectRatio: false,
-            scales: { x: { title: { display: true, text: 'Volume Ulasan' } }, y: { title: { display: true, text: 'Rata-rata Rating' }, min: 1, max: 5 } },
-            plugins: { tooltip: { callbacks: { label: (c) => `${c.raw.label}: ${c.raw.y} ⭐ (${c.raw.x} ulasan)` } } }
+            scales: {
+                x: { title: { display: true, text: 'Volume Ulasan' } },
+                y: { title: { display: true, text: 'Rata-rata Rating' }, min: 1, max: 5 }
+            },
+            plugins: { tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.raw.y} ⭐ (${c.raw.x} ulasan)` } } }
         }
     });
 }
@@ -211,25 +325,40 @@ function renderChartTrenVolume() {
     const ctx = document.getElementById('chartTrenVolume');
     if (!ctx) return;
 
+    const dataToUse = rawReviewData; 
     const months = {};
-    currentFilteredData.forEach(r => {
+    const portsFound = new Set();
+
+    dataToUse.forEach(r => {
         const d = getReviewDateISO(r);
-        if (d) {
-            const m = d.substring(0, 7); // YYYY-MM
-            months[m] = (months[m] || 0) + 1;
+        const p = getPortName(r);
+        if (d && p) {
+            const m = d.substring(0, 7);
+            if (!months[m]) months[m] = {};
+            months[m][p] = (months[m][p] || 0) + 1;
+            portsFound.add(p);
         }
     });
-    const sorted = Object.keys(months).sort();
-    const data = sorted.map(m => months[m]);
+
+    const sortedMonths = Object.keys(months).sort();
+    
+    const datasets = Array.from(portsFound).map(portName => {
+        const portData = sortedMonths.map(m => (months[m][portName] || 0));
+        return {
+            label: portName,
+            data: portData,
+            borderColor: getColorForPort(portName),
+            backgroundColor: getColorForPort(portName) + '33', 
+            tension: 0.4,
+            fill: portsFound.size === 1 // Fill hanya jika 1 pelabuhan yang tampil
+        };
+    });
 
     if (chartTrenVolume) chartTrenVolume.destroy();
     chartTrenVolume = new Chart(ctx, {
         type: 'line',
-        data: {
-            labels: sorted,
-            datasets: [{ label: 'Volume Ulasan', data: data, borderColor: '#2196F3', tension: 0.4, fill: true, backgroundColor: 'rgba(33, 150, 243, 0.1)' }]
-        },
-        options: { responsive: true, maintainAspectRatio: false }
+        data: { labels: sortedMonths, datasets: datasets },
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } } }
     });
 }
 
@@ -239,17 +368,18 @@ function renderChartTrenAspek() {
 
     const ASPEK_UTAMA = ["Kebersihan", "Pelayanan", "Antrian & Waktu Tunggu"];
     const months = {};
-    
-    currentFilteredData.forEach(r => {
+    const dataToUse = processedReviewData;
+
+    dataToUse.forEach(r => {
         const d = getReviewDateISO(r);
         if (!d) return;
         const m = d.substring(0, 7);
-        
+
         if (!months[m]) {
             months[m] = {};
             ASPEK_UTAMA.forEach(a => months[m][a] = 0);
         }
-        
+
         const text = (r.review || r.final_text || "").toLowerCase();
         ASPEK_UTAMA.forEach(a => {
             if (ASPECT_KEYWORDS[a] && ASPECT_KEYWORDS[a].some(kw => text.includes(kw))) {
@@ -263,7 +393,8 @@ function renderChartTrenAspek() {
         label: a,
         data: sorted.map(m => months[m][a]),
         borderColor: ['#dc3545', '#198754', '#ffc107'][i],
-        tension: 0.4
+        tension: 0.4,
+        fill: false
     }));
 
     if (chartTrenAspek) chartTrenAspek.destroy();
@@ -278,12 +409,13 @@ function renderChartAspekStacked() {
     const ctx = document.getElementById('chartAspekStacked');
     if (!ctx) return;
 
+    const dataToUse = processedReviewData;
     const stats = {};
-    for (const [aspek, kws] of Object.entries(ASPECT_KEYWORDS)) {
+    for (const [aspek] of Object.entries(ASPECT_KEYWORDS)) {
         stats[aspek] = { POSITIF: 0, NETRAL: 0, NEGATIF: 0 };
     }
 
-    currentFilteredData.forEach(r => {
+    dataToUse.forEach(r => {
         const text = (r.review || r.final_text || "").toLowerCase();
         const sent = getSentiment(r);
         for (const [aspek, kws] of Object.entries(ASPECT_KEYWORDS)) {
@@ -305,17 +437,27 @@ function renderChartAspekStacked() {
             labels: labels,
             datasets: [
                 { label: 'Positif', data: posData, backgroundColor: '#198754' },
-                { label: 'Netral', data: netData, backgroundColor: '#ffc107' },
+                { label: 'Netral',  data: netData, backgroundColor: '#ffc107' },
                 { label: 'Negatif', data: negData, backgroundColor: '#dc3545' }
             ]
         },
-        options: { responsive: true, maintainAspectRatio: false, scales: { x: { stacked: true }, y: { stacked: true } } }
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            scales: { x: { stacked: true }, y: { stacked: true } }
+        }
     });
 }
 
 /* ============ 2. FETCH GAMBAR PYTHON ============ */
+let chartRequestSeq = 0;
+
 async function refreshChartsFromPython(port, from, to) {
-    const params = new URLSearchParams({ port: port || "ALL", from: from || "", to: to || "" });
+    const mySeq = ++chartRequestSeq; 
+    const params = new URLSearchParams({
+        port: port || "ALL",
+        from: from || "",
+        to:   to   || ""
+    });
     const imgIds = ["imgWordcloud", "imgHeatmap", "imgConfusion"];
 
     imgIds.forEach(id => {
@@ -325,15 +467,18 @@ async function refreshChartsFromPython(port, from, to) {
 
     try {
         const res = await fetch(`/api/charts?${params.toString()}`);
-        if (!res.ok) throw new Error(`Server status ${res.status}`);
+        if (mySeq !== chartRequestSeq) return;
         const data = await res.json();
+        if (mySeq !== chartRequestSeq) return;
 
-        if (data.status !== "success") throw new Error(data.message);
+        if (!res.ok || data.status !== "success") {
+            throw new Error(data.message || `Server status ${res.status}`);
+        }
 
         const mapping = {
-            "imgWordcloud": data.charts.wordcloud,
-            "imgHeatmap":   data.charts.heatmap,
-            "imgConfusion": data.charts.confusion_matrix
+            "imgWordcloud": data.charts && data.charts.wordcloud,
+            "imgHeatmap":   data.charts && data.charts.heatmap,
+            "imgConfusion": data.charts && data.charts.confusion_matrix
         };
 
         for (const [id, base64] of Object.entries(mapping)) {
@@ -344,6 +489,7 @@ async function refreshChartsFromPython(port, from, to) {
             }
         }
     } catch (err) {
+        if (mySeq !== chartRequestSeq) return;
         console.error("Gagal memuat grafik Python:", err);
         imgIds.forEach(id => {
             const imgEl = document.getElementById(id);
@@ -353,29 +499,28 @@ async function refreshChartsFromPython(port, from, to) {
 }
 
 /* ============ RENDER TABEL & TEKS ============ */
-function renderFilteredData(dataList) {
+function renderFilteredData(processedList, rawList) {
     const tbody = document.getElementById("tableBody");
+    if (!tbody) return; 
     tbody.innerHTML = "";
-    
-    if (!dataList || dataList.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Tidak ada data ulasan.</td></tr>`;
+
+    if (!processedList || processedList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Tidak ada data teks untuk ditampilkan.</td></tr>`;
         updateSummaryCounts(0, 0, 0, 0, 0);
         renderNegativeReviews([]);
         renderAspectAnalysis([]);
         return;
     }
 
-    let countPos = 0, countNeg = 0, countNet = 0, ratingSum = 0, ratingCount = 0;
+    let countPos = 0, countNeg = 0, countNet = 0;
 
-    dataList.forEach((row, index) => {
+    // Tabel dan Sentimen berdasarkan data NLP Processed
+    processedList.forEach((row, index) => {
         const rawSentiment = getSentiment(row);
         let badgeClass = "bg-secondary";
         if (rawSentiment === "POSITIF") { badgeClass = "badge-positif bg-success"; countPos++; }
         else if (rawSentiment === "NEGATIF") { badgeClass = "badge-negatif bg-danger"; countNeg++; }
         else if (rawSentiment === "NETRAL") { badgeClass = "badge-netral bg-warning text-dark"; countNet++; }
-
-        const rating = parseFloat(row.rating);
-        if (!isNaN(rating)) { ratingSum += rating; ratingCount++; }
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
@@ -388,22 +533,40 @@ function renderFilteredData(dataList) {
         tbody.appendChild(tr);
     });
 
+    // Total Rating dan Ulasan dari RAW CSV
+    let ratingSum = 0, ratingCount = 0;
+    const totalRaw = rawList.length;
+    
+    rawList.forEach(row => {
+        const rating = parseFloat(row.rating);
+        if (!isNaN(rating)) { 
+            ratingSum += rating; 
+            ratingCount++; 
+        }
+    });
+
     const avgRating = ratingCount > 0 ? (ratingSum / ratingCount).toFixed(1) : 0;
-    updateSummaryCounts(dataList.length, countPos, countNeg, countNet, avgRating);
-    renderNegativeReviews(dataList);
-    renderAspectAnalysis(dataList);
+    
+    updateSummaryCounts(totalRaw, countPos, countNeg, countNet, avgRating);
+    renderNegativeReviews(processedList);
+    renderAspectAnalysis(processedList);
 }
 
 function updateSummaryCounts(total, pos, neg, net, avgRating) {
-    document.getElementById("kpiTotal").innerText = total;
-    document.getElementById("kpiPositif").innerText = pos;
-    document.getElementById("kpiNetral").innerText = net;
-    document.getElementById("kpiNegatif").innerText = neg;
-    if (avgRating !== undefined) document.getElementById("kpiRating").innerText = avgRating;
+    const setText = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.innerText = val;
+    };
+    setText("kpiTotal", total);
+    setText("kpiPositif", pos);
+    setText("kpiNetral", net);
+    setText("kpiNegatif", neg);
+    if (avgRating !== undefined) setText("kpiRating", avgRating);
 }
 
 function renderNegativeReviews(dataList) {
     const el = document.getElementById("listNegatif");
+    if (!el) return;
     const negatives = (dataList || []).filter(r => getSentiment(r) === "NEGATIF").slice(0, 10);
     if (!negatives.length) {
         el.innerHTML = '<p class="text-muted small mb-0">Tidak ada ulasan negatif.</p>';
@@ -416,7 +579,7 @@ function renderNegativeReviews(dataList) {
             <div class="border-bottom pb-2 mb-2">
                 <div class="d-flex justify-content-between align-items-center mb-1">
                     <span class="fw-bold small">${port}</span>
-                    <span class="badge bg-danger">${r.rating || "-"} <i class="fa-solid fa-star text-warning"></i></span>
+                    <span class="badge bg-danger">${escapeHtml(r.rating || "-")} <i class="fa-solid fa-star text-warning"></i></span>
                 </div>
                 <p class="text-muted mb-1 mt-1" style="font-size:13px;">${text}</p>
             </div>`;
@@ -425,6 +588,7 @@ function renderNegativeReviews(dataList) {
 
 function renderAspectAnalysis(dataList) {
     const container = document.getElementById("aspekContent");
+    if (!container) return;
     if (!dataList || dataList.length === 0) {
         container.innerHTML = '<p class="text-muted small mb-0">Tidak ada data.</p>';
         return;
@@ -456,33 +620,31 @@ function renderAspectAnalysis(dataList) {
     }
 
     const byVolume = Object.entries(aspectStats).filter(([_, s]) => s.neg > 0).sort((a, b) => b[1].neg - a[1].neg);
-    const byRate = Object.entries(aspectStats).filter(([_, s]) => s.total >= 3 && s.neg > 0).sort((a, b) => (b[1].neg / b[1].total) - (a[1].neg / a[1].total));
-    const topPort = Object.entries(portNegatives).sort((a, b) => b[1] - a[1])[0];
+    const byRate   = Object.entries(aspectStats).filter(([_, s]) => s.total >= 3 && s.neg > 0).sort((a, b) => (b[1].neg / b[1].total) - (a[1].neg / a[1].total));
+    const topPort  = Object.entries(portNegatives).sort((a, b) => b[1] - a[1])[0];
 
     container.innerHTML = `
         <div class="alert alert-warning py-2 small fw-600 border-warning">
-            <i class="fa-solid fa-triangle-exclamation me-1"></i> 
-            ${totalNegatif} ulasan negatif dari ${dataList.length} total (${((totalNegatif/dataList.length)*100).toFixed(0)}%)
+            <i class="fa-solid fa-triangle-exclamation me-1"></i>
+            ${totalNegatif} ulasan negatif dari ${dataList.length} total
+            (${((totalNegatif / dataList.length) * 100).toFixed(0)}%)
         </div>
-        
         <div class="mb-3 mt-4">
             <strong class="d-block mb-1 text-dark" style="font-size: 14px;">• Volume Keluhan Tertinggi:</strong>
             <p class="text-muted mb-0" style="font-size: 13px;">
-                ${byVolume[0] ? `<b>${byVolume[0][0]}</b> (${byVolume[0][1].neg} keluhan)` : "-"}
+                ${byVolume[0] ? `<b>${escapeHtml(byVolume[0][0])}</b> (${byVolume[0][1].neg} keluhan)` : "-"}
             </p>
         </div>
-        
         <div class="mb-3">
-            <strong class="d-block mb-1 text-dark" style="font-size: 14px;">• Aspek Masalah Utama:</strong>
+            <strong class="d-block mb-1 text-dark" style="font-size: 14px;">• Aspek dengan Proporsi Sentimen Negatif Tertinggi:</strong>
             <p class="text-muted mb-0" style="font-size: 13px;">
-                ${byRate[0] ? `<b>${byRate[0][0]}</b> (${((byRate[0][1].neg/byRate[0][1].total)*100).toFixed(0)}% negatif)` : "-"}
+                ${byRate[0] ? `<b>${escapeHtml(byRate[0][0])}</b> (${((byRate[0][1].neg / byRate[0][1].total) * 100).toFixed(0)}% negatif, minimal 3 ulasan)` : "-"}
             </p>
         </div>
-
         <div class="mb-3">
             <strong class="d-block mb-1 text-dark" style="font-size: 14px;">• Pelabuhan Paling Dikeluhkan:</strong>
             <p class="text-muted mb-0" style="font-size: 13px;">
-                ${topPort ? `<b>${topPort[0]}</b> (${topPort[1]} keluhan)` : "-"}
+                ${topPort ? `<b>${escapeHtml(topPort[0])}</b> (${topPort[1]} keluhan)` : "-"}
             </p>
         </div>
     `;
@@ -491,37 +653,51 @@ function renderAspectAnalysis(dataList) {
 /* ============ Helpers ============ */
 const ASPECT_KEYWORDS = {
     "Kebersihan": ["kotor", "jorok", "sampah", "bau", "debu", "kumuh", "kumal", "bersih", "wangi", "rapi", "higienis"],
-    "Fasilitas": ["toilet", "ac", "kursi", "wifi", "ruang tunggu", "musholla", "mushola", "tempat duduk", "pendingin", "ventilasi", "lampu", "colokan", "charger", "eskalator", "lift", "kantin", "food court", "tempat makan"],
-    "Pelayanan": ["pelayanan", "petugas", "staff", "staf", "ramah", "kasar", "layanan", "respon", "responsif", "sigap", "cuek", "judes", "jutek", "helpful", "informasi", "petunjuk", "arahan"],
-    "Antrian & Waktu Tunggu": ["antri", "antre", "antrian", "lama", "lambat", "nunggu", "tunggu", "delay", "telat", "terlambat", "molor", "panjang", "ramai"],
-    "Harga & Tiket": ["harga", "tiket", "mahal", "murah", "biaya", "bayar", "tarif", "pembayaran", "cash", "qris", "kartu"],
-    "Keamanan": ["aman", "keamanan", "hilang", "copet", "curiga", "jaga", "satpam", "penjagaan", "pemeriksaan", "skrining"],
+    "Fasilitas": ["toilet", "ac", "kursi", "wifi", "ruang tunggu", "musholla", "mushola", "tempat duduk", "dingin", "ventilasi", "lampu", "colok", "charger", "eskalator", "lift", "kantin", "food court", "tempat makan"],
+    "Pelayanan": ["layan", "tugas", "staff", "staf", "ramah", "kasar", "respon", "responsif", "sigap", "cuek", "judes", "jutek", "helpful", "informasi", "tunjuk", "arah"],
+    "Antrian & Waktu Tunggu": ["antri", "antre", "lama", "lambat", "nunggu", "tunggu", "delay", "telat", "molor", "panjang", "ramai"],
+    "Harga & Tiket": ["harga", "tiket", "mahal", "murah", "biaya", "bayar", "tarif", "cash", "qris", "kartu"],
+    "Keamanan": ["aman", "hilang", "copet", "curiga", "jaga", "satpam", "periksa", "skrining"],
     "Akses & Parkir": ["akses", "parkir", "jalan", "transportasi", "ojek", "taksi", "grab", "gojek", "lokasi", "sulit", "macet", "jauh", "turun", "naik"],
-    "Kapal & Jadwal": ["kapal", "jadwal", "keberangkatan", "kedatangan", "berangkat", "terlambat", "delay", "batal", "cancel", "reschedule", "booking"]
+    "Kapal & Jadwal": ["kapal", "jadwal", "berangkat", "datang", "batal", "cancel", "reschedule", "booking"]
 };
 
 function escapeHtml(s) {
     return String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 function getSentiment(row) { return (row.sentiment || row.sentimen || "").toString().trim().toUpperCase(); }
-function getPortName(row) { return (row.lokasi || "").toString().trim() || (row.pelabuhan || "").toString().trim() || "-"; }
+function getPortName(row)  { return (row.lokasi || "").toString().trim() || (row.pelabuhan || "").toString().trim() || "-"; }
 
-const BULAN_ID_JS = { januari: 1, februari: 2, maret: 3, april: 4, mei: 5, juni: 6, juli: 7, agustus: 8, september: 9, oktober: 10, november: 11, desember: 12, jan: 1, feb: 2, mar: 3, apr: 4, jun: 6, jul: 7, agu: 8, agt: 8, sep: 9, okt: 10, nov: 11, des: 12 };
+const BULAN_ID_JS = {
+    januari: 1, februari: 2, maret: 3, april: 4, mei: 5, juni: 6,
+    juli: 7, agustus: 8, september: 9, oktober: 10, november: 11, desember: 12,
+    jan: 1, feb: 2, mar: 3, apr: 4, jun: 6, jul: 7, agu: 8, agt: 8,
+    sep: 9, okt: 10, nov: 11, des: 12
+};
+
 function parseRelativeToDate(label, baseDate) {
     if (!label) return null;
     const base = baseDate instanceof Date && !isNaN(baseDate) ? baseDate : new Date();
     let text = String(label).toLowerCase().trim().replace(/\bdiedit\b/g, "").replace(/[()]/g, "").replace(/\s+/g, " ").trim();
     if (!text) return null;
+
     for (const [name, num] of Object.entries(BULAN_ID_JS)) {
         const m = text.match(new RegExp(`(\\d{1,2})\\s+${name}\\s+(\\d{4})`));
-        if (m) { const d = new Date(parseInt(m[2], 10), num - 1, parseInt(m[1], 10)); if (!isNaN(d)) return d; }
+        if (m) return new Date(parseInt(m[2], 10), num - 1, parseInt(m[1], 10));
     }
+
     if (["baru", "new", "baru saja", "barusan"].includes(text)) return new Date(base);
     if (text === "kemarin" || text === "yesterday") { const d = new Date(base); d.setDate(d.getDate() - 1); return d; }
+
     const enToId = { minute: "menit", minutes: "menit", hour: "jam", hours: "jam", day: "hari", days: "hari", week: "minggu", weeks: "minggu", month: "bulan", months: "bulan", year: "tahun", years: "tahun" };
     for (const [en, idw] of Object.entries(enToId)) text = text.replace(new RegExp(`\\b${en}\\b`, "g"), idw);
+
     text = text.replace(/\ba\b|\ban\b/g, "1").replace(/\byesterday\b/g, "kemarin").replace(/\bago\b/g, "lalu")
-               .replace(/\bsehari\b/g, "1 hari").replace(/\bseminggu\b/g, "1 minggu").replace(/\bsebulan\b/g, "1 bulan").replace(/\bsetahun\b/g, "1 tahun").replace(/\bsejam\b/g, "1 jam").replace(/\bsemenit\b/g, "1 menit").replace(/\blebih dari\b/g, "").trim();
+               .replace(/\bsehari\b/g, "1 hari").replace(/\bseminggu\b/g, "1 minggu")
+               .replace(/\bsebulan\b/g, "1 bulan").replace(/\bsetahun\b/g, "1 tahun")
+               .replace(/\bsejam\b/g, "1 jam").replace(/\bsemenit\b/g, "1 menit")
+               .replace(/\blebih dari\b/g, "").trim();
+
     const m = text.match(/(\d+)\s*(menit|jam|hari|minggu|bulan|tahun)/);
     if (!m) return null;
     const n = parseInt(m[1], 10), unit = m[2], d = new Date(base);
@@ -533,37 +709,63 @@ function parseRelativeToDate(label, baseDate) {
     else if (unit === "tahun") d.setDate(d.getDate() - n * 365);
     return d;
 }
-function toLocalISODate(d) { return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`; }
+
+function toLocalISODate(d) {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 function getReviewDateISO(row) {
     if (row.tanggal_estimasi) {
         const s = String(row.tanggal_estimasi).slice(0, 10);
         if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
     }
     let base = new Date();
-    if (row.scraped_at) { const p = new Date(String(row.scraped_at).replace(" ", "T")); if (!isNaN(p)) base = p; }
+    if (row.scraped_at) {
+        const p = new Date(String(row.scraped_at).replace(" ", "T"));
+        if (!isNaN(p)) base = p;
+    }
     const d = parseRelativeToDate(row.tanggal, base);
     return d ? toLocalISODate(d) : null;
 }
 
 async function predictSingleText() {
-    const text = document.getElementById("inputReview").value.trim();
+    const inputEl   = document.getElementById("inputReview");
     const resultDiv = document.getElementById("singleResult");
-    if (!text) { alert("Masukkan teks ulasan!"); return; }
+
+    if (!inputEl || !resultDiv) return;
+
+    const text = (inputEl.value || "").trim();
+    if (!text) {
+        alert("Masukkan teks ulasan!");
+        return;
+    }
+
     resultDiv.classList.remove("d-none");
-    resultDiv.innerHTML = `<div class="spinner-border spinner-border-sm text-primary"></div> Memproses...`;
+    resultDiv.className = "alert alert-secondary mt-3 mb-0 shadow-sm";
+    resultDiv.innerHTML = '<div class="spinner-border spinner-border-sm text-primary"></div> Memproses...';
+
     try {
-        const res = await fetch("/predict-single", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) });
+        const res = await fetch("/predict-single", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text })
+        });
         const data = await res.json();
-        if (data.status === "success") {
-            let prob = data.probabilities ? Object.entries(data.probabilities).map(([k,v]) => `${k}: ${(v*100).toFixed(1)}%`).join(" | ") : "";
+
+        if (res.ok && data.status === "success" && data.prediction) {
+            const prob = data.probabilities
+                ? Object.entries(data.probabilities).map(([k, v]) => `${k}: ${(Number(v) * 100).toFixed(1)}%`).join(" | ")
+                : "";
             resultDiv.className = "alert alert-success mt-3 mb-0 shadow-sm";
-            resultDiv.innerHTML = `<strong>Hasil:</strong> <span class="badge bg-dark fs-6">${data.prediction}</span><br><small class="text-muted mt-2 d-block">${prob}</small>`;
+            resultDiv.innerHTML = `<strong>Hasil:</strong> <span class="badge bg-dark fs-6">${escapeHtml(String(data.prediction))}</span>` +
+                (prob ? `<br><small class="text-muted mt-2 d-block">${escapeHtml(prob)}</small>` : "");
         } else {
             resultDiv.className = "alert alert-danger mt-3 mb-0 shadow-sm";
-            resultDiv.innerHTML = data.message;
+            resultDiv.textContent = data.message || "Terjadi kesalahan pada server.";
         }
     } catch (err) {
         resultDiv.className = "alert alert-danger mt-3 mb-0 shadow-sm";
-        resultDiv.innerHTML = "Gagal terhubung ke server.";
+        resultDiv.textContent = "Gagal terhubung ke server.";
+        console.error(err);
     }
 }
