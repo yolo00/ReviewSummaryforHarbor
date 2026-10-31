@@ -28,9 +28,9 @@ document.addEventListener("DOMContentLoaded", () => {
 /* =========================================================
    LOGIKA DASHBOARD
    ========================================================= */
-let selectedPorts = []; 
-let rawReviewData = []; 
-let processedReviewData = []; 
+let selectedPorts = [];
+let rawReviewData = [];
+let processedReviewData = [];
 
 let chartDonut = null;
 let chartPopularitas = null;
@@ -39,17 +39,31 @@ let chartTrenVolume = null;
 let chartTrenAspek = null;
 let chartAspekStacked = null;
 
-// Palet warna yang konsisten untuk grafik perbandingan
+/* ============ PALET WARNA (SESUAI DESIGN SYSTEM) ============ */
+const COLORS = {
+    primary:   "#0D47A1",
+    secondary: "#2196F3",
+    accent:    "#90CAF9",
+    positif:   "#00B809",
+    netral:    "#FFCC00",
+    negatif:   "#9D0003",
+    muted:     "#525252",
+    bg:        "#E3F2FD",
+    card:      "#FFFFFF"
+};
+
+// Palet warna untuk grafik perbandingan pelabuhan
 const PORT_COLORS = {
-    "Batam Centre": "#0D47A1",
-    "Harbour Bay": "#1976D2",
-    "Telaga Punggur": "#42A5F5",
-    "Nongsapura": "#90CAF9",
-    "Sekupang": "#E3F2FD",
-    "Default": "#2196F3"
+    "Batam Centre":   "#0D47A1",
+    "Harbour Bay":    "#1565C0",
+    "Telaga Punggur": "#1976D2",
+    "Nongsapura":     "#42A5F5",
+    "Sekupang":       "#90CAF9",
+    "Default":        "#2196F3"
 };
 
 function getColorForPort(portName) {
+    if (!portName) return PORT_COLORS["Default"];
     for (const key in PORT_COLORS) {
         if (portName.toLowerCase().includes(key.toLowerCase())) {
             return PORT_COLORS[key];
@@ -57,6 +71,51 @@ function getColorForPort(portName) {
     }
     return PORT_COLORS["Default"];
 }
+
+/* ============ SIDEBAR TOGGLE (MOBILE) ============ */
+function initSidebar() {
+    const sidebar  = document.getElementById('sidebar-wrapper');
+    const overlay  = document.getElementById('sidebarOverlay');
+    const toggle   = document.getElementById('sidebarToggle');
+    const closeBtn = document.getElementById('sidebarClose');
+
+    if (!sidebar) return;
+
+    function openSidebar() {
+        sidebar.classList.add('show');
+        if (overlay) overlay.classList.add('show');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeSidebar() {
+        sidebar.classList.remove('show');
+        if (overlay) overlay.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+
+    if (toggle)   toggle.addEventListener('click', openSidebar);
+    if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
+    if (overlay)  overlay.addEventListener('click', closeSidebar);
+
+    // Tutup sidebar otomatis saat klik menu di mobile
+    document.querySelectorAll('#sidebar-menu .list-group-item').forEach(item => {
+        item.addEventListener('click', () => {
+            if (window.innerWidth < 992) closeSidebar();
+        });
+    });
+
+    // Tutup saat resize ke desktop
+    window.addEventListener('resize', () => {
+        if (window.innerWidth >= 992) closeSidebar();
+    });
+
+    // ESC untuk menutup
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeSidebar();
+    });
+}
+
+document.addEventListener('DOMContentLoaded', initSidebar);
 
 /* ============ Navigasi SPA ============ */
 function switchPage(pageId, element) {
@@ -71,9 +130,18 @@ function switchPage(pageId, element) {
     element.classList.remove('text-muted');
     element.classList.add('active');
 
+    // Tutup sidebar di mobile setelah navigasi
+    if (window.innerWidth < 992) {
+        const sidebar = document.getElementById('sidebar-wrapper');
+        const overlay = document.getElementById('sidebarOverlay');
+        if (sidebar) sidebar.classList.remove('show');
+        if (overlay) overlay.classList.remove('show');
+        document.body.style.overflow = '';
+    }
+
     if (pageId === 'popularitas') { renderChartPopularitas(); renderChartRatingVolume(); }
-    if (pageId === 'tren') { renderChartTrenVolume(); renderChartTrenAspek(); }
-    if (pageId === 'aspek') { renderChartAspekStacked(); }
+    if (pageId === 'tren')        { renderChartTrenVolume(); renderChartTrenAspek(); }
+    if (pageId === 'aspek')       { renderChartAspekStacked(); }
 }
 
 /* ============ Inisialisasi Dashboard ============ */
@@ -87,18 +155,18 @@ document.addEventListener("DOMContentLoaded", () => {
         const savedTo   = localStorage.getItem("filterTanggalTo");
 
         if (savedPortsStr) {
-            try { selectedPorts = JSON.parse(savedPortsStr); } 
+            try { selectedPorts = JSON.parse(savedPortsStr); }
             catch (e) { selectedPorts = []; }
         }
         if (!selectedPorts || selectedPorts.length === 0) {
-            selectedPorts = ["ALL"]; 
+            selectedPorts = ["ALL"];
         }
 
         if (savedFrom) document.getElementById("filterTanggalFrom").value = savedFrom;
         if (savedTo)   document.getElementById("filterTanggalTo").value   = savedTo;
 
         renderPortChips();
-        loadAllData(); // Memanggil API untuk raw & processed
+        loadAllData();
 
         if (portSelect) {
             portSelect.addEventListener('change', function() {
@@ -113,8 +181,8 @@ document.addEventListener("DOMContentLoaded", () => {
                         selectedPorts.push(val);
                     }
                 }
-                
-                this.value = ""; 
+
+                this.value = "";
                 updateFilterState();
             });
         }
@@ -125,9 +193,9 @@ document.addEventListener("DOMContentLoaded", () => {
 function renderPortChips() {
     const container = document.getElementById("selectedPortsContainer");
     if (!container) return;
-    
+
     container.innerHTML = "";
-    
+
     if (selectedPorts.length === 0 || (selectedPorts.length === 1 && selectedPorts[0] === "ALL")) {
         container.innerHTML = `<span class="badge bg-secondary opacity-75">Semua Pelabuhan (Default)</span>`;
         return;
@@ -137,8 +205,8 @@ function renderPortChips() {
         const chip = document.createElement("div");
         chip.className = "port-chip";
         chip.innerHTML = `
-            ${port}
-            <span class="remove-chip" onclick="removePort('${port}')">&times;</span>
+            ${escapeHtml(port)}
+            <span class="remove-chip" onclick="removePort('${escapeHtml(port)}')">&times;</span>
         `;
         container.appendChild(chip);
     });
@@ -175,7 +243,7 @@ function updateFilterState() {
     localStorage.setItem("filterTanggalTo",   toISO   || "");
 
     renderPortChips();
-    loadAllData(); // Fetch ulang data dari API karena filter berubah
+    loadAllData();
 }
 
 /* ============ Pemanggilan Data ============ */
@@ -184,13 +252,13 @@ async function loadAllData() {
         const portsParam = selectedPorts.includes("ALL") ? "" : selectedPorts.join(",");
         const fromParam = document.getElementById("filterTanggalFrom").value || "";
         const toParam = document.getElementById("filterTanggalTo").value || "";
-        
+
         const qs = `?ports=${encodeURIComponent(portsParam)}&from=${fromParam}&to=${toParam}`;
 
         // Fetch RAW Data (Untuk Rating & Volume)
         const resRaw = await fetch(`/get-data${qs}&source=raw`);
         const resultRaw = await resRaw.json();
-        
+
         // Fetch PROCESSED Data (Untuk Sentimen & NLP)
         const resProc = await fetch(`/get-data${qs}&source=processed`);
         const resultProc = await resProc.json();
@@ -206,11 +274,11 @@ async function loadAllData() {
             processedReviewData = resultProc.processed;
             if (resultProc.warning) console.warn(resultProc.warning);
         } else {
-             console.warn("Gagal memuat data processed:", resultProc.processed_error);
-             processedReviewData = [];
+            console.warn("Gagal memuat data processed:", resultProc.processed_error);
+            processedReviewData = [];
         }
 
-        applyFiltersToData(); 
+        applyFiltersToData();
     } catch (err) {
         console.error("Gagal memuat keseluruhan data:", err);
     }
@@ -247,9 +315,37 @@ function renderChartDonut() {
         type: 'doughnut',
         data: {
             labels: ['Positif', 'Netral', 'Negatif'],
-            datasets: [{ data: [pos, net, neg], backgroundColor: ['#198754', '#ffc107', '#dc3545'] }]
+            datasets: [{
+                data: [pos, net, neg],
+                backgroundColor: [COLORS.positif, COLORS.netral, COLORS.negatif],
+                borderColor: '#ffffff',
+                borderWidth: 3,
+                hoverOffset: 8
+            }]
         },
-        options: { responsive: true, maintainAspectRatio: false, cutout: '60%', plugins: { legend: { position: 'bottom' } } }
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '62%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 18,
+                        font: { family: 'Inter', size: 13, weight: '600' },
+                        usePointStyle: true,
+                        pointStyle: 'circle'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: COLORS.primary,
+                    titleFont: { family: 'Inter', size: 13, weight: '700' },
+                    bodyFont:  { family: 'Inter', size: 12 },
+                    padding: 12,
+                    cornerRadius: 8
+                }
+            }
+        }
     });
 }
 
@@ -273,12 +369,39 @@ function renderChartPopularitas() {
         type: 'bar',
         data: {
             labels: labels,
-            datasets: [{ label: 'Jumlah Ulasan (Total)', data: data, backgroundColor: bgColors }]
+            datasets: [{
+                label: 'Jumlah Ulasan (Total)',
+                data: data,
+                backgroundColor: bgColors,
+                borderRadius: 8,
+                borderSkipped: false,
+                maxBarThickness: 60
+            }]
         },
-        options: { 
-            responsive: true, 
+        options: {
+            responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false } }
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: COLORS.primary,
+                    padding: 12,
+                    cornerRadius: 8,
+                    titleFont: { family: 'Inter', weight: '700' },
+                    bodyFont:  { family: 'Inter' }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { font: { family: 'Inter', size: 12 } },
+                    grid: { display: false }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: { font: { family: 'Inter', size: 12 }, precision: 0 },
+                    grid: { color: 'rgba(13, 71, 161, 0.08)' }
+                }
+            }
         }
     });
 }
@@ -298,12 +421,14 @@ function renderChartRatingVolume() {
         }
     });
 
-    // Buat array dataset (multi-seri) untuk scatter plot
     const datasets = Object.keys(agg).map(p => ({
         label: p,
         data: [{ x: agg[p].count, y: parseFloat((agg[p].sum / agg[p].count).toFixed(1)) }],
         backgroundColor: getColorForPort(p),
-        pointRadius: 8
+        pointRadius: 9,
+        pointHoverRadius: 13,
+        pointBorderColor: '#ffffff',
+        pointBorderWidth: 2
     }));
 
     if (chartRatingVolume) chartRatingVolume.destroy();
@@ -311,12 +436,51 @@ function renderChartRatingVolume() {
         type: 'scatter',
         data: { datasets: datasets },
         options: {
-            responsive: true, maintainAspectRatio: false,
+            responsive: true,
+            maintainAspectRatio: false,
             scales: {
-                x: { title: { display: true, text: 'Volume Ulasan' } },
-                y: { title: { display: true, text: 'Rata-rata Rating' }, min: 1, max: 5 }
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Volume Ulasan',
+                        font: { family: 'Inter', weight: '700', size: 12 },
+                        color: COLORS.muted
+                    },
+                    grid: { color: 'rgba(13, 71, 161, 0.08)' },
+                    ticks: { font: { family: 'Inter', size: 11 } }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'Rata-rata Rating',
+                        font: { family: 'Inter', weight: '700', size: 12 },
+                        color: COLORS.muted
+                    },
+                    min: 1, max: 5,
+                    grid: { color: 'rgba(13, 71, 161, 0.08)' },
+                    ticks: { font: { family: 'Inter', size: 11 }, stepSize: 1 }
+                }
             },
-            plugins: { tooltip: { callbacks: { label: (c) => `${c.dataset.label}: ${c.raw.y} ⭐ (${c.raw.x} ulasan)` } } }
+            plugins: {
+                legend: {
+                    labels: {
+                        font: { family: 'Inter', size: 12, weight: '600' },
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        padding: 14
+                    }
+                },
+                tooltip: {
+                    backgroundColor: COLORS.primary,
+                    padding: 12,
+                    cornerRadius: 8,
+                    titleFont: { family: 'Inter', weight: '700' },
+                    bodyFont:  { family: 'Inter' },
+                    callbacks: {
+                        label: (c) => `${c.dataset.label}: ${c.raw.y} ⭐ (${c.raw.x} ulasan)`
+                    }
+                }
+            }
         }
     });
 }
@@ -325,7 +489,7 @@ function renderChartTrenVolume() {
     const ctx = document.getElementById('chartTrenVolume');
     if (!ctx) return;
 
-    const dataToUse = rawReviewData; 
+    const dataToUse = rawReviewData;
     const months = {};
     const portsFound = new Set();
 
@@ -341,16 +505,23 @@ function renderChartTrenVolume() {
     });
 
     const sortedMonths = Object.keys(months).sort();
-    
+
     const datasets = Array.from(portsFound).map(portName => {
+        const color = getColorForPort(portName);
         const portData = sortedMonths.map(m => (months[m][portName] || 0));
         return {
             label: portName,
             data: portData,
-            borderColor: getColorForPort(portName),
-            backgroundColor: getColorForPort(portName) + '33', 
+            borderColor: color,
+            backgroundColor: color + '22',
             tension: 0.4,
-            fill: portsFound.size === 1 // Fill hanya jika 1 pelabuhan yang tampil
+            borderWidth: 3,
+            pointRadius: 4,
+            pointHoverRadius: 7,
+            pointBackgroundColor: color,
+            pointBorderColor: '#fff',
+            pointBorderWidth: 2,
+            fill: portsFound.size === 1
         };
     });
 
@@ -358,7 +529,39 @@ function renderChartTrenVolume() {
     chartTrenVolume = new Chart(ctx, {
         type: 'line',
         data: { labels: sortedMonths, datasets: datasets },
-        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'top' } } }
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        font: { family: 'Inter', size: 12, weight: '600' },
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        padding: 14
+                    }
+                },
+                tooltip: {
+                    backgroundColor: COLORS.primary,
+                    padding: 12,
+                    cornerRadius: 8,
+                    titleFont: { family: 'Inter', weight: '700' },
+                    bodyFont:  { family: 'Inter' }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { font: { family: 'Inter', size: 11 } },
+                    grid: { display: false }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: { font: { family: 'Inter', size: 11 }, precision: 0 },
+                    grid: { color: 'rgba(13, 71, 161, 0.08)' }
+                }
+            }
+        }
     });
 }
 
@@ -367,6 +570,7 @@ function renderChartTrenAspek() {
     if (!ctx) return;
 
     const ASPEK_UTAMA = ["Kebersihan", "Pelayanan", "Antrian & Waktu Tunggu"];
+    const colors = [COLORS.primary, COLORS.positif, COLORS.netral];
     const months = {};
     const dataToUse = processedReviewData;
 
@@ -392,8 +596,15 @@ function renderChartTrenAspek() {
     const datasets = ASPEK_UTAMA.map((a, i) => ({
         label: a,
         data: sorted.map(m => months[m][a]),
-        borderColor: ['#dc3545', '#198754', '#ffc107'][i],
+        borderColor: colors[i],
+        backgroundColor: colors[i] + '22',
         tension: 0.4,
+        borderWidth: 3,
+        pointRadius: 4,
+        pointHoverRadius: 7,
+        pointBackgroundColor: colors[i],
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
         fill: false
     }));
 
@@ -401,7 +612,39 @@ function renderChartTrenAspek() {
     chartTrenAspek = new Chart(ctx, {
         type: 'line',
         data: { labels: sorted, datasets: datasets },
-        options: { responsive: true, maintainAspectRatio: false }
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        font: { family: 'Inter', size: 12, weight: '600' },
+                        usePointStyle: true,
+                        pointStyle: 'circle',
+                        padding: 14
+                    }
+                },
+                tooltip: {
+                    backgroundColor: COLORS.primary,
+                    padding: 12,
+                    cornerRadius: 8,
+                    titleFont: { family: 'Inter', weight: '700' },
+                    bodyFont:  { family: 'Inter' }
+                }
+            },
+            scales: {
+                x: {
+                    ticks: { font: { family: 'Inter', size: 11 } },
+                    grid: { display: false }
+                },
+                y: {
+                    beginAtZero: true,
+                    ticks: { font: { family: 'Inter', size: 11 }, precision: 0 },
+                    grid: { color: 'rgba(13, 71, 161, 0.08)' }
+                }
+            }
+        }
     });
 }
 
@@ -436,14 +679,45 @@ function renderChartAspekStacked() {
         data: {
             labels: labels,
             datasets: [
-                { label: 'Positif', data: posData, backgroundColor: '#198754' },
-                { label: 'Netral',  data: netData, backgroundColor: '#ffc107' },
-                { label: 'Negatif', data: negData, backgroundColor: '#dc3545' }
+                { label: 'Positif', data: posData, backgroundColor: COLORS.positif, borderRadius: 4 },
+                { label: 'Netral',  data: netData, backgroundColor: COLORS.netral,  borderRadius: 4 },
+                { label: 'Negatif', data: negData, backgroundColor: COLORS.negatif, borderRadius: 4 }
             ]
         },
         options: {
-            responsive: true, maintainAspectRatio: false,
-            scales: { x: { stacked: true }, y: { stacked: true } }
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                x: {
+                    stacked: true,
+                    ticks: { font: { family: 'Inter', size: 11 }, maxRotation: 45, minRotation: 0 },
+                    grid: { display: false }
+                },
+                y: {
+                    stacked: true,
+                    beginAtZero: true,
+                    ticks: { font: { family: 'Inter', size: 11 }, precision: 0 },
+                    grid: { color: 'rgba(13, 71, 161, 0.08)' }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        font: { family: 'Inter', size: 12, weight: '600' },
+                        usePointStyle: true,
+                        pointStyle: 'rectRounded',
+                        padding: 14
+                    }
+                },
+                tooltip: {
+                    backgroundColor: COLORS.primary,
+                    padding: 12,
+                    cornerRadius: 8,
+                    titleFont: { family: 'Inter', weight: '700' },
+                    bodyFont:  { family: 'Inter' }
+                }
+            }
         }
     });
 }
@@ -452,7 +726,7 @@ function renderChartAspekStacked() {
 let chartRequestSeq = 0;
 
 async function refreshChartsFromPython(port, from, to) {
-    const mySeq = ++chartRequestSeq; 
+    const mySeq = ++chartRequestSeq;
     const params = new URLSearchParams({
         port: port || "ALL",
         from: from || "",
@@ -486,6 +760,9 @@ async function refreshChartsFromPython(port, from, to) {
             if (imgEl && base64) {
                 imgEl.src = base64;
                 imgEl.alt = "";
+                imgEl.style.display = ""; // pastikan tampil kembali
+                const fallback = document.getElementById(id + 'Fallback');
+                if (fallback) fallback.style.display = 'none';
             }
         }
     } catch (err) {
@@ -501,7 +778,7 @@ async function refreshChartsFromPython(port, from, to) {
 /* ============ RENDER TABEL & TEKS ============ */
 function renderFilteredData(processedList, rawList) {
     const tbody = document.getElementById("tableBody");
-    if (!tbody) return; 
+    if (!tbody) return;
     tbody.innerHTML = "";
 
     if (!processedList || processedList.length === 0) {
@@ -514,18 +791,17 @@ function renderFilteredData(processedList, rawList) {
 
     let countPos = 0, countNeg = 0, countNet = 0;
 
-    // Tabel dan Sentimen berdasarkan data NLP Processed
     processedList.forEach((row, index) => {
         const rawSentiment = getSentiment(row);
         let badgeClass = "bg-secondary";
-        if (rawSentiment === "POSITIF") { badgeClass = "badge-positif bg-success"; countPos++; }
-        else if (rawSentiment === "NEGATIF") { badgeClass = "badge-negatif bg-danger"; countNeg++; }
-        else if (rawSentiment === "NETRAL") { badgeClass = "badge-netral bg-warning text-dark"; countNet++; }
+        if (rawSentiment === "POSITIF") { badgeClass = "badge-positif"; countPos++; }
+        else if (rawSentiment === "NEGATIF") { badgeClass = "badge-negatif"; countNeg++; }
+        else if (rawSentiment === "NETRAL") { badgeClass = "badge-netral"; countNet++; }
 
         const tr = document.createElement("tr");
         tr.innerHTML = `
             <td>${index + 1}</td>
-            <td><span class="fw-bold">${escapeHtml(getPortName(row))}</span></td>
+            <td><span class="fw-bold" style="color: var(--primary);">${escapeHtml(getPortName(row))}</span></td>
             <td><small class="text-muted">${escapeHtml(row.tanggal_estimasi || row.tanggal || "-")}</small></td>
             <td>${escapeHtml(row.review || row.final_text || "-")}</td>
             <td><span class="badge ${badgeClass}">${rawSentiment || "BELUM"}</span></td>
@@ -533,20 +809,19 @@ function renderFilteredData(processedList, rawList) {
         tbody.appendChild(tr);
     });
 
-    // Total Rating dan Ulasan dari RAW CSV
     let ratingSum = 0, ratingCount = 0;
     const totalRaw = rawList.length;
-    
+
     rawList.forEach(row => {
         const rating = parseFloat(row.rating);
-        if (!isNaN(rating)) { 
-            ratingSum += rating; 
-            ratingCount++; 
+        if (!isNaN(rating)) {
+            ratingSum += rating;
+            ratingCount++;
         }
     });
 
     const avgRating = ratingCount > 0 ? (ratingSum / ratingCount).toFixed(1) : 0;
-    
+
     updateSummaryCounts(totalRaw, countPos, countNeg, countNet, avgRating);
     renderNegativeReviews(processedList);
     renderAspectAnalysis(processedList);
@@ -578,8 +853,8 @@ function renderNegativeReviews(dataList) {
         return `
             <div class="border-bottom pb-2 mb-2">
                 <div class="d-flex justify-content-between align-items-center mb-1">
-                    <span class="fw-bold small">${port}</span>
-                    <span class="badge bg-danger">${escapeHtml(r.rating || "-")} <i class="fa-solid fa-star text-warning"></i></span>
+                    <span class="fw-bold small" style="color: var(--primary);">${port}</span>
+                    <span class="rating-badge">${escapeHtml(r.rating || "-")} <i class="fa-solid fa-star"></i></span>
                 </div>
                 <p class="text-muted mb-1 mt-1" style="font-size:13px;">${text}</p>
             </div>`;
@@ -615,7 +890,9 @@ function renderAspectAnalysis(dataList) {
     });
 
     if (totalNegatif === 0) {
-        container.innerHTML = `<div class="alert alert-success py-2"><i class="fa-solid fa-check me-1"></i> Tidak ada ulasan negatif pada filter ini.</div>`;
+        container.innerHTML = `<div class="alert alert-success py-2 mb-0" style="background-color: rgba(0,184,9,0.1); border: 1px solid var(--positif); color: var(--positif);">
+            <i class="fa-solid fa-check me-1"></i> Tidak ada ulasan negatif pada filter ini.
+        </div>`;
         return;
     }
 
@@ -624,25 +901,26 @@ function renderAspectAnalysis(dataList) {
     const topPort  = Object.entries(portNegatives).sort((a, b) => b[1] - a[1])[0];
 
     container.innerHTML = `
-        <div class="alert alert-warning py-2 small fw-600 border-warning">
+        <div class="alert py-2 small fw-600 mb-3"
+             style="background-color: rgba(157,0,3,0.08); border: 1px solid rgba(157,0,3,0.3); color: var(--negatif);">
             <i class="fa-solid fa-triangle-exclamation me-1"></i>
             ${totalNegatif} ulasan negatif dari ${dataList.length} total
             (${((totalNegatif / dataList.length) * 100).toFixed(0)}%)
         </div>
         <div class="mb-3 mt-4">
-            <strong class="d-block mb-1 text-dark" style="font-size: 14px;">• Volume Keluhan Tertinggi:</strong>
+            <strong class="d-block mb-1" style="font-size: 14px; color: var(--primary);">• Volume Keluhan Tertinggi:</strong>
             <p class="text-muted mb-0" style="font-size: 13px;">
                 ${byVolume[0] ? `<b>${escapeHtml(byVolume[0][0])}</b> (${byVolume[0][1].neg} keluhan)` : "-"}
             </p>
         </div>
         <div class="mb-3">
-            <strong class="d-block mb-1 text-dark" style="font-size: 14px;">• Aspek dengan Proporsi Sentimen Negatif Tertinggi:</strong>
+            <strong class="d-block mb-1" style="font-size: 14px; color: var(--primary);">• Aspek dengan Proporsi Sentimen Negatif Tertinggi:</strong>
             <p class="text-muted mb-0" style="font-size: 13px;">
                 ${byRate[0] ? `<b>${escapeHtml(byRate[0][0])}</b> (${((byRate[0][1].neg / byRate[0][1].total) * 100).toFixed(0)}% negatif, minimal 3 ulasan)` : "-"}
             </p>
         </div>
         <div class="mb-3">
-            <strong class="d-block mb-1 text-dark" style="font-size: 14px;">• Pelabuhan Paling Dikeluhkan:</strong>
+            <strong class="d-block mb-1" style="font-size: 14px; color: var(--primary);">• Pelabuhan Paling Dikeluhkan:</strong>
             <p class="text-muted mb-0" style="font-size: 13px;">
                 ${topPort ? `<b>${escapeHtml(topPort[0])}</b> (${topPort[1]} keluhan)` : "-"}
             </p>
@@ -742,7 +1020,7 @@ async function predictSingleText() {
 
     resultDiv.classList.remove("d-none");
     resultDiv.className = "alert alert-secondary mt-3 mb-0 shadow-sm";
-    resultDiv.innerHTML = '<div class="spinner-border spinner-border-sm text-primary"></div> Memproses...';
+    resultDiv.innerHTML = '<div class="spinner-border spinner-border-sm me-2" style="color: var(--primary);"></div> Memproses...';
 
     try {
         const res = await fetch("/predict-single", {
@@ -753,12 +1031,30 @@ async function predictSingleText() {
         const data = await res.json();
 
         if (res.ok && data.status === "success" && data.prediction) {
+            const pred = String(data.prediction).toUpperCase();
+            const colorMap = {
+                "POSITIF": COLORS.positif,
+                "NEGATIF": COLORS.negatif,
+                "NETRAL":  COLORS.netral
+            };
+            const bgMap = {
+                "POSITIF": "rgba(0,184,9,0.10)",
+                "NEGATIF": "rgba(157,0,3,0.08)",
+                "NETRAL":  "rgba(255,204,0,0.15)"
+            };
+            const color = colorMap[pred] || COLORS.primary;
+            const bg    = bgMap[pred]   || "rgba(13,71,161,0.08)";
+
             const prob = data.probabilities
                 ? Object.entries(data.probabilities).map(([k, v]) => `${k}: ${(Number(v) * 100).toFixed(1)}%`).join(" | ")
                 : "";
-            resultDiv.className = "alert alert-success mt-3 mb-0 shadow-sm";
-            resultDiv.innerHTML = `<strong>Hasil:</strong> <span class="badge bg-dark fs-6">${escapeHtml(String(data.prediction))}</span>` +
-                (prob ? `<br><small class="text-muted mt-2 d-block">${escapeHtml(prob)}</small>` : "");
+
+            resultDiv.className = "alert mt-3 mb-0 shadow-sm";
+            resultDiv.style.backgroundColor = bg;
+            resultDiv.style.border = `1px solid ${color}`;
+            resultDiv.style.color = color;
+            resultDiv.innerHTML = `<strong>Hasil:</strong> <span class="badge fs-6" style="background-color:${color}; color:#fff;">${escapeHtml(pred)}</span>` +
+                (prob ? `<br><small class="mt-2 d-block" style="color: var(--muted);">${escapeHtml(prob)}</small>` : "");
         } else {
             resultDiv.className = "alert alert-danger mt-3 mb-0 shadow-sm";
             resultDiv.textContent = data.message || "Terjadi kesalahan pada server.";

@@ -19,7 +19,7 @@ RAW_CANDIDATES = [
     os.path.join("data", "raw", "review_pelabuhan.csv"),
 ]
 PROCESSED_CANDIDATES = [
-    os.path.join("data", "processed", "review_predicted.csv"),
+    os.path.join("data", "processed", "review_predicted(fix).csv"),
     os.path.join("data", "processed", "review_processed(fix).csv"),
     os.path.join("data", "processed", "review_processed.csv"),
 ]

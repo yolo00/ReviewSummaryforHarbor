@@ -89,8 +89,8 @@ class SVMSentimentAnalyzer:
 
 def run_analysis_job(
     input_csv=os.path.join("data", "processed", "review_processed(fix).csv"),
-    output_predicted_csv=os.path.join("data", "processed", "review_predicted.csv"),
-    output_recap_csv=os.path.join("data", "processed", "rekap_sentimen_pelabuhan.csv"),
+    output_predicted_csv=os.path.join("data", "processed", "review_predicted(fix).csv"),
+    output_recap_csv=os.path.join("data", "processed", "rekap_sentimen_pelabuhan(fix).csv"),
     use_neutral_threshold=False,
     neutral_margin=0.10,
 ):
