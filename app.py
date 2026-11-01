@@ -7,7 +7,7 @@ from flask import Flask, render_template, jsonify, request
 from modules.scraper import run_scraper
 from modules.preprocessing import run_preprocessing_job
 from modules.train_model2 import train_svm_model, EVAL_PATH, TERMS_PATH
-from modules.predict import SVMSentimentAnalyzer, run_analysis_job
+from modules.predict import SVMSentimentAnalyzer, run_analysis_job, InputTidakValid
 from modules.model_report import load_json
 from modules.check_terms import save_top_terms
 
@@ -197,13 +197,30 @@ def get_data():
     return jsonify(result)
 
 _analyzer = None
+_analyzer_key = None
 _analyzer_lock = threading.Lock()
+MODEL_PIPELINE_PATH = os.path.join("data", "models", "svm_pipeline.pkl")
+
 def get_analyzer():
-    global _analyzer
-    if _analyzer is None:
-        with _analyzer_lock:
-            if _analyzer is None: _analyzer = SVMSentimentAnalyzer()
-    return _analyzer
+    """Model dimuat sekali, dan dimuat ulang otomatis bila file model berubah (mis. setelah training)."""
+    global _analyzer, _analyzer_key
+    with _analyzer_lock:
+        mtime = os.path.getmtime(MODEL_PIPELINE_PATH) if os.path.exists(MODEL_PIPELINE_PATH) else None
+        if _analyzer is None or mtime != _analyzer_key:
+            _analyzer = SVMSentimentAnalyzer()
+            _analyzer_key = mtime
+        return _analyzer
+
+@app.route("/load-model", methods=["POST"])
+def load_model():
+    """Dipanggil dashboard saat halaman Uji Sentimen dibuka, agar model siap sebelum dipakai."""
+    try:
+        get_analyzer()
+        return jsonify({"status": "success", "message": "Model siap."})
+    except FileNotFoundError:
+        return jsonify({"status": "error", "message": "Model belum dilatih."}), 404
+    except Exception as e:
+        return jsonify({"status": "error", "message": f"Model gagal dimuat: {e}"}), 500
 
 @app.route("/predict-single", methods=["POST"])
 def predict_single():
@@ -213,6 +230,10 @@ def predict_single():
     try:
         prediction, probs = get_analyzer().predict_single(text.strip())
         return jsonify({"status": "success", "text": text, "prediction": prediction, "probabilities": probs})
+    except InputTidakValid as e:
+        return jsonify({"status": "error", "message": str(e)}), 400
+    except FileNotFoundError:
+        return jsonify({"status": "error", "message": "Model belum dilatih."}), 404
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 

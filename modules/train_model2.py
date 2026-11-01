@@ -6,7 +6,6 @@ import os
 import joblib
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics import classification_report, confusion_matrix
 from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.svm import SVC
@@ -228,24 +227,14 @@ def train_svm_model(data_path=None):
     y_pred = sentiment_pipeline.predict(X_test)
     labels_present = [l for l in LABELS if l in set(y)]
 
-    print("\n--- LAPORAN EVALUASI MODEL ---")
-    print(classification_report(y_test, y_pred, labels=labels_present, zero_division=0))
-
-    print("--- CONFUSION MATRIX (baris = aktual, kolom = prediksi) ---")
-    cm = confusion_matrix(y_test, y_pred, labels=labels_present)
-    print(pd.DataFrame(cm, index=labels_present, columns=labels_present).to_string())
-
     joblib.dump(sentiment_pipeline, MODEL_PATH)
     print(f"\n✅ Pipeline berhasil disimpan di: {MODEL_PATH}")
 
-    report_dict = classification_report(
-        y_test, y_pred, labels=labels_present, output_dict=True, zero_division=0,
-    )
-
+    # Perhitungan metrik (accuracy, precision, recall, F1, confusion matrix)
+    # dan penyimpanannya dilakukan sepenuhnya oleh modules/model_report.py.
     save_evaluation(
         y_test, y_pred, labels_present, EVAL_PATH,
         extra={
-            "classification_report": report_dict,
             "n_after_dedup": int(len(df)),
             "data_path": data_path,
             "label_source": label_source,   # "sentimen" atau "rating"
