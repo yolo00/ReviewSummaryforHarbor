@@ -66,24 +66,32 @@
                 </div>
             </div>
 
-            <label class="form-label fw-600 text-muted mb-1" style="font-size: 13px;">Rentang Tanggal</label>
-            <div class="input-group input-group-sm mb-2">
-                <span class="input-group-text bg-white border-end-0">
-                    <i class="fa-regular fa-calendar" style="color: var(--primary);"></i>
-                </span>
-                <input type="date" id="filterTanggalFrom" class="form-control border-start-0 ps-0 fw-500" onchange="updateFilterState()">
+                    <label class="form-label fw-600 text-muted mb-1" style="font-size: 13px;">Rentang Tanggal</label>
+            <div class="row g-2 mb-2">
+                <div class="col-6">
+                    <label class="text-muted mb-1" style="font-size: 11px;">Dari:</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white border-end-0"><i class="fa-regular fa-calendar text-dark"></i></span>
+                        <input type="date" id="filterTanggalFrom" class="form-control border-start-0 ps-0 fw-500" onchange="updateFilterState()">
+                    </div>
+                </div>
+                <div class="col-6">
+                    <label class="text-muted mb-1" style="font-size: 11px;">Hingga:</label>
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white border-end-0"><i class="fa-regular fa-calendar text-dark"></i></span>
+                        <input type="date" id="filterTanggalTo" class="form-control border-start-0 ps-0 fw-500" onchange="updateFilterState()">
+                    </div>
+                </div>
             </div>
-            <div class="input-group input-group-sm mb-1">
-                <span class="input-group-text bg-white border-end-0">
-                    <i class="fa-regular fa-calendar" style="color: var(--primary);"></i>
-                </span>
-                <input type="date" id="filterTanggalTo" class="form-control border-start-0 ps-0 fw-500" onchange="updateFilterState()">
+
+            <!-- Pesan Error -->
+            <div id="dateErrorMsg" class="text-danger mb-2" style="display: none; font-size: 11px; background: rgba(157,0,3,0.08); padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(157,0,3,0.2);">
+                <i class="fa-solid fa-circle-exclamation me-1"></i> <span></span>
             </div>
+
             <div class="d-flex justify-content-between align-items-center mb-3">
                 <small class="text-muted" style="font-size: 11px;">(estimasi — Google Maps relatif)</small>
-                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none"
-                        style="font-size: 12px; color: var(--primary);"
-                        onclick="resetTanggalFilter()">Reset Tanggal</button>
+                <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none" style="font-size: 12px;" onclick="resetTanggalFilter()">Reset Tanggal</button>
             </div>
 
             <button class="btn btn-primary w-100 py-2 d-flex justify-content-center align-items-center gap-2"

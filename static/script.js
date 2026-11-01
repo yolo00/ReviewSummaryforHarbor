@@ -1,17 +1,82 @@
+
 /* =========================================================
-   LOGIKA LANDING PAGE (INDEX)
+   LOGIKA LANDING PAGE (INDEX) - UPDATE VALIDASI
+   ========================================================= */
+/* =========================================================
+   LOGIKA LANDING PAGE (INDEX) - UPDATE VALIDASI & RESET
    ========================================================= */
 document.addEventListener("DOMContentLoaded", () => {
     const btnMulai = document.getElementById('btnMulai');
 
     if (btnMulai) {
-        btnMulai.addEventListener('click', function () {
+        btnMulai.addEventListener('click', function (e) {
+            const port = document.getElementById('selectPelabuhan').value;
+            
+            // Ambil elemen input agar bisa di-reset
+            const fromInput = document.getElementById('indexTanggalFrom');
+            const toInput   = document.getElementById('indexTanggalTo');
+            
+            const from = fromInput.value;
+            const to   = toInput.value;
+
+            const todayStr = toLocalISODate(new Date());
+
+            // 1. Cek Tanggal 'Dari' melebihi hari ini
+            if (from && from > todayStr) {
+                e.preventDefault(); 
+                alert("Tanggal 'Dari' tidak boleh melebihi hari ini. (Input di-reset)");
+                fromInput.value = ""; // Reset input yang salah
+                return;
+            }
+            
+            // 2. Cek Tanggal 'Sampai' melebihi hari ini
+            if (to && to > todayStr) {
+                e.preventDefault(); 
+                alert("Tanggal 'Sampai' tidak boleh melebihi hari ini. (Input di-reset)");
+                toInput.value = ""; // Reset input yang salah
+                return;
+            }
+            
+            // 3. Cek Tanggal 'Dari' melebihi Tanggal 'Sampai'
+            if (from && to && from > to) {
+                e.preventDefault(); 
+                alert("Tanggal 'Dari' tidak boleh melebihi tanggal 'Sampai'. (Input 'Sampai' di-reset)");
+                toInput.value = ""; // Reset input 'Sampai' yang salah
+                return;
+            }
+
+            // Jika lolos validasi, simpan ke localStorage
+            let portsArr = port === "ALL" ? ["ALL"] : [port];
+            localStorage.setItem('selectedPorts', JSON.stringify(portsArr));
+            localStorage.setItem('filterTanggalFrom', from || '');
+            localStorage.setItem('filterTanggalTo',   to   || '');
+        });
+    }
+});
+
+
+/* =========================================================
+   LOGIKA LANDING PAGE (INDEX) - UPDATE VALIDASI
+   ========================================================= */
+document.addEventListener("DOMContentLoaded", () => {
+    const btnMulai = document.getElementById('btnMulai');
+
+    if (btnMulai) {
+        btnMulai.addEventListener('click', function (e) {
             const port = document.getElementById('selectPelabuhan').value;
             const from = document.getElementById('indexTanggalFrom').value;
             const to   = document.getElementById('indexTanggalTo').value;
 
+            const todayStr = toLocalISODate(new Date());
+
+            if (to && to > todayStr) {
+                e.preventDefault(); // Mencegah pindah halaman
+                alert("Tanggal 'Hingga' tidak boleh melebihi hari ini.");
+                return;
+            }
             if (from && to && from > to) {
-                alert("Tanggal awal tidak boleh setelah tanggal akhir.");
+                e.preventDefault(); // Mencegah pindah halaman
+                alert("Tanggal 'Dari' tidak boleh melebihi tanggal 'Hingga'.");
                 return;
             }
 
@@ -23,7 +88,6 @@ document.addEventListener("DOMContentLoaded", () => {
         });
     }
 });
-
 
 /* =========================================================
    LOGIKA DASHBOARD
@@ -39,7 +103,7 @@ let chartTrenVolume = null;
 let chartTrenAspek = null;
 let chartAspekStacked = null;
 
-/* ============ PALET WARNA (SESUAI DESIGN SYSTEM) ============ */
+/* ============ PALET WARNA ============ */
 const COLORS = {
     primary:   "#0D47A1",
     secondary: "#2196F3",
@@ -52,7 +116,6 @@ const COLORS = {
     card:      "#FFFFFF"
 };
 
-// Palet warna untuk grafik perbandingan pelabuhan
 const PORT_COLORS = {
     "Batam Centre":   "#0D47A1",
     "Harbour Bay":    "#1565C0",
@@ -72,7 +135,56 @@ function getColorForPort(portName) {
     return PORT_COLORS["Default"];
 }
 
-/* ============ SIDEBAR TOGGLE (MOBILE) ============ */
+/* ============ VALIDASI TANGGAL ============ */
+/* ============ VALIDASI TANGGAL ============ */
+function validateDates(fromISO, toISO) {
+    const errorDiv = document.getElementById("dateErrorMsg");
+    const fromInput = document.getElementById("filterTanggalFrom");
+    const toInput = document.getElementById("filterTanggalTo");
+
+    if (!errorDiv || !fromInput || !toInput) return true;
+
+    // 1. Reset tampilan error setiap kali fungsi dipanggil
+    errorDiv.style.display = "none";
+    fromInput.classList.remove("date-error-active");
+    toInput.classList.remove("date-error-active");
+
+    if (!fromISO && !toISO) return true;
+
+    const todayStr = toLocalISODate(new Date());
+    const errorSpan = errorDiv.querySelector('span');
+    let isInvalid = false;
+
+    // 2. Cek Tanggal 'Dari' melebihi hari ini
+    if (fromISO && fromISO > todayStr) {
+        errorDiv.style.display = "block";
+        errorSpan.innerText = "Tanggal 'Dari' tidak boleh melebihi hari ini. (Input di-reset)";
+        fromInput.classList.add("date-error-active");
+        fromInput.value = ""; // RESET INPUT
+        isInvalid = true;
+    }
+    // 3. Cek Tanggal 'Sampai' melebihi hari ini
+    else if (toISO && toISO > todayStr) {
+        errorDiv.style.display = "block";
+        errorSpan.innerText = "Tanggal 'Sampai' tidak boleh melebihi hari ini. (Input di-reset)";
+        toInput.classList.add("date-error-active");
+        toInput.value = ""; // RESET INPUT
+        isInvalid = true;
+    }
+    // 4. Cek Tanggal 'Dari' melebihi Tanggal 'Sampai'
+    else if (fromISO && toISO && fromISO > toISO) {
+        errorDiv.style.display = "block";
+        errorSpan.innerText = "Tanggal 'Dari' tidak boleh melebihi tanggal 'Sampai'. (Input 'Sampai' di-reset)";
+        fromInput.classList.add("date-error-active");
+        toInput.classList.add("date-error-active");
+        toInput.value = ""; // RESET INPUT YANG SALAH
+        isInvalid = true;
+    }
+
+    return !isInvalid;
+}
+
+/* ============ SIDEBAR TOGGLE ============ */
 function initSidebar() {
     const sidebar  = document.getElementById('sidebar-wrapper');
     const overlay  = document.getElementById('sidebarOverlay');
@@ -97,19 +209,16 @@ function initSidebar() {
     if (closeBtn) closeBtn.addEventListener('click', closeSidebar);
     if (overlay)  overlay.addEventListener('click', closeSidebar);
 
-    // Tutup sidebar otomatis saat klik menu di mobile
     document.querySelectorAll('#sidebar-menu .list-group-item').forEach(item => {
         item.addEventListener('click', () => {
             if (window.innerWidth < 992) closeSidebar();
         });
     });
 
-    // Tutup saat resize ke desktop
     window.addEventListener('resize', () => {
         if (window.innerWidth >= 992) closeSidebar();
     });
 
-    // ESC untuk menutup
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') closeSidebar();
     });
@@ -130,7 +239,6 @@ function switchPage(pageId, element) {
     element.classList.remove('text-muted');
     element.classList.add('active');
 
-    // Tutup sidebar di mobile setelah navigasi
     if (window.innerWidth < 992) {
         const sidebar = document.getElementById('sidebar-wrapper');
         const overlay = document.getElementById('sidebarOverlay');
@@ -166,7 +274,11 @@ document.addEventListener("DOMContentLoaded", () => {
         if (savedTo)   document.getElementById("filterTanggalTo").value   = savedTo;
 
         renderPortChips();
-        loadAllData();
+        
+        // Panggil validasi terlebih dahulu sebelum memuat data awal
+        if (validateDates(savedFrom, savedTo)) {
+            loadAllData();
+        }
 
         if (portSelect) {
             portSelect.addEventListener('change', function() {
@@ -181,7 +293,6 @@ document.addEventListener("DOMContentLoaded", () => {
                         selectedPorts.push(val);
                     }
                 }
-
                 this.value = "";
                 updateFilterState();
             });
@@ -233,11 +344,12 @@ function updateFilterState() {
     const fromISO = document.getElementById("filterTanggalFrom").value || null;
     const toISO   = document.getElementById("filterTanggalTo").value || null;
 
-    if (fromISO && toISO && fromISO > toISO) {
-        alert("Tanggal awal tidak boleh setelah tanggal akhir.");
-        return;
+    // Panggil validasi. Jika gagal (false), hentikan proses (TOLAK fetch data)
+    if (!validateDates(fromISO, toISO)) {
+        return; 
     }
 
+    // Jika valid, simpan ke localStorage dan muat data
     localStorage.setItem("selectedPorts", JSON.stringify(selectedPorts));
     localStorage.setItem("filterTanggalFrom", fromISO || "");
     localStorage.setItem("filterTanggalTo",   toISO   || "");
@@ -248,6 +360,11 @@ function updateFilterState() {
 
 /* ============ Pemanggilan Data ============ */
 async function loadAllData() {
+    // Validasi pengaman ganda sebelum fetch
+    const checkFrom = document.getElementById("filterTanggalFrom").value || null;
+    const checkTo = document.getElementById("filterTanggalTo").value || null;
+    if (!validateDates(checkFrom, checkTo)) return;
+
     try {
         const portsParam = selectedPorts.includes("ALL") ? "" : selectedPorts.join(",");
         const fromParam = document.getElementById("filterTanggalFrom").value || "";
@@ -255,11 +372,9 @@ async function loadAllData() {
 
         const qs = `?ports=${encodeURIComponent(portsParam)}&from=${fromParam}&to=${toParam}`;
 
-        // Fetch RAW Data (Untuk Rating & Volume)
         const resRaw = await fetch(`/get-data${qs}&source=raw`);
         const resultRaw = await resRaw.json();
 
-        // Fetch PROCESSED Data (Untuk Sentimen & NLP)
         const resProc = await fetch(`/get-data${qs}&source=processed`);
         const resultProc = await resProc.json();
 

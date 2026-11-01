@@ -425,6 +425,18 @@ body.dashboard-page { background-color: var(--bg-page); }
 .chart-container { height: 350px; }
 
 /* =========================================================
+   FORM VALIDATION (DATE FILTER)
+   ========================================================= */
+.date-error-active {
+    border-color: var(--negatif) !important;
+    background-color: rgba(157, 0, 3, 0.03) !important;
+}
+
+#dateErrorMsg {
+    transition: all 0.3s ease;
+}
+
+/* =========================================================
    RESPONSIVE
    ========================================================= */
 @media (max-width: 991.98px) {
