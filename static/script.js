@@ -142,6 +142,8 @@ function switchPage(pageId, element) {
     if (pageId === 'popularitas') { renderChartPopularitas(); renderChartRatingVolume(); }
     if (pageId === 'tren')        { renderChartTrenVolume(); renderChartTrenAspek(); }
     if (pageId === 'aspek')       { renderChartAspekStacked(); }
+    // Muat model hanya saat halaman Uji Sentimen dibuka
+    if (pageId === 'uji')         { siapkanModelUji(); }
 }
 
 /* ============ Inisialisasi Dashboard ============ */
@@ -1006,21 +1008,80 @@ function getReviewDateISO(row) {
     return d ? toLocalISODate(d) : null;
 }
 
+/* ============ Uji Sentimen ============ */
+const MIN_KATA_UJI = 6;
+let modelUjiSiap = false;
+let modelUjiPromise = null;
+
+function hitungKata(text) {
+    const m = text.match(/\p{L}+/gu);
+    return m ? m.length : 0;
+}
+
+// Minta server memuat model sekali; tombol Uji dinonaktifkan selama memuat.
+function siapkanModelUji() {
+    if (modelUjiSiap) return Promise.resolve(true);
+    if (modelUjiPromise) return modelUjiPromise;
+    const btn    = document.getElementById("btnUji");
+    const status = document.getElementById("statusModelUji");
+    if (btn) btn.disabled = true;
+    if (status) {
+        status.className = "small text-muted mb-3";
+        status.innerHTML = '<div class="spinner-border spinner-border-sm me-2" style="color: var(--primary);"></div>Memuat model...';
+    }
+    modelUjiPromise = fetch("/load-model", { method: "POST" })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status !== "success") throw new Error(data.message || "Model gagal dimuat.");
+            modelUjiSiap = true;
+            if (status) status.innerHTML = "";
+            return true;
+        })
+        .catch(err => {
+            modelUjiPromise = null;  // izinkan coba lagi
+            if (status) {
+                status.className = "small text-danger mb-3";
+                status.textContent = "Model belum dapat dimuat: " + err.message;
+            }
+            return false;
+        })
+        .finally(() => { if (btn) btn.disabled = false; });
+    return modelUjiPromise;
+}
+
 async function predictSingleText() {
     const inputEl   = document.getElementById("inputReview");
     const resultDiv = document.getElementById("singleResult");
 
     if (!inputEl || !resultDiv) return;
 
+    const tampilkanError = (pesan) => {
+        resultDiv.classList.remove("d-none");
+        resultDiv.removeAttribute("style");
+        resultDiv.className = "alert alert-danger mt-3 mb-0 shadow-sm";
+        resultDiv.textContent = pesan;
+    };
+
     const text = (inputEl.value || "").trim();
     if (!text) {
-        alert("Masukkan teks ulasan!");
+        tampilkanError("Teks ulasan tidak boleh kosong.");
+        return;
+    }
+    const jumlahKata = hitungKata(text);
+    if (jumlahKata < MIN_KATA_UJI) {
+        tampilkanError(`Teks terlalu pendek: baru ${jumlahKata} kata. Tulis minimal ${MIN_KATA_UJI} kata agar model dapat menganalisis.`);
         return;
     }
 
     resultDiv.classList.remove("d-none");
+    resultDiv.removeAttribute("style");
     resultDiv.className = "alert alert-secondary mt-3 mb-0 shadow-sm";
     resultDiv.innerHTML = '<div class="spinner-border spinner-border-sm me-2" style="color: var(--primary);"></div> Memproses...';
+
+    if (!(await siapkanModelUji())) {
+        tampilkanError("Model belum dapat dimuat. Pastikan model sudah dilatih, lalu coba lagi.");
+        return;
+    }
 
     try {
         const res = await fetch("/predict-single", {

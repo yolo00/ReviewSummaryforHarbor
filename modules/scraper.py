@@ -5,6 +5,7 @@ import platform
 import tempfile
 import hashlib
 import gc
+from collections import Counter
 from datetime import datetime, timedelta
 import pandas as pd
 
@@ -80,31 +81,31 @@ def detect_photo_indicator(review):
         pass
     return None
 
-# ============ HASH ============
-def _normalize_hash_field(val):
-    if val is None:
-        return ""
-    s = str(val).strip()
-    if s.lower() in ("nan", "none"):
-        return ""
-    return s
+# ============ KUNCI PEMBANDING ULASAN ============
+TEKS_KOSONG = "[Tanpa Teks]"
 
-def _normalize_rating_for_hash(val):
+def _kunci_ulasan(pelabuhan, rating, review):
+    """Kunci pembanding ulasan: pelabuhan + jumlah bintang + isi ulasan.
+
+    Isi ulasan dinormalisasi (spasi berlebih, huruf besar/kecil) agar beda format
+    kecil tidak membuat ulasan yang sama dianggap baru. Nama reviewer dan tanggal
+    sengaja TIDAK dipakai: nama tidak diambil lagi, dan label relatif Google Maps
+    ("4 bulan lalu") berubah setiap scraping sehingga ulasan yang sama akan
+    terlihat berbeda.
+    """
     try:
-        return str(int(float(str(val).strip())))
-    except (ValueError, TypeError):
-        return "0"
+        bintang = int(float(rating))
+    except (TypeError, ValueError):
+        bintang = None
+    teks = "" if pd.isna(review) else re.sub(r"\s+", " ", str(review)).strip().casefold()
+    pel = "" if pd.isna(pelabuhan) else str(pelabuhan).strip().casefold()
+    return (pel, bintang, teks)
 
-def _build_review_hash(lokasi, pelabuhan, nama, rating, tanggal, review_text):
-    payload = (
-        f"{_normalize_hash_field(lokasi)}|"
-        f"{_normalize_hash_field(pelabuhan)}|"
-        f"{_normalize_hash_field(nama)}|"
-        f"{_normalize_rating_for_hash(rating)}|"
-        f"{_normalize_hash_field(tanggal)}|"
-        f"{_normalize_hash_field(review_text)}"
-    )
-    return hashlib.md5(payload.encode()).hexdigest()
+def _punya_teks(review):
+    """Ulasan tanpa teks tidak bisa dibedakan lewat isinya, jadi tidak ikut pencocokan."""
+    if pd.isna(review):
+        return False
+    return str(review).strip().casefold() not in ("", TEKS_KOSONG.casefold())
 
 # ============ PARSING TANGGAL ============
 def parse_relative_date(label, base_dt=None):
@@ -538,43 +539,26 @@ def save_batch(data_batch, retries=3):
             time.sleep(2)
     raise FatalScrapeError(f"Gagal simpan CSV setelah {retries}x: {last_error}")
 
-def dedup_csv_final():
-    if not os.path.exists(CSV_PATH):
-        return True
-    tmp_path = CSV_PATH + ".tmp"
-    try:
-        print("🧹 Dedup final...")
-        df = pd.read_csv(CSV_PATH)
-        awal = len(df)
-        df = df.drop_duplicates(
-            subset=["lokasi", "pelabuhan", "nama_reviewer", "rating", "tanggal", "review"],
-            keep="last"
-        )
-        df.to_csv(tmp_path, index=False, encoding="utf-8-sig")
-        os.replace(tmp_path, CSV_PATH)
-        print(f"✅ {awal} -> {len(df)} baris.")
-        return True
-    except Exception as e:
-        print(f"❌ Dedup gagal: {e}")
-        if os.path.exists(tmp_path):
-            try:
-                os.remove(tmp_path)
-            except Exception:
-                pass
-        return False
-
 # ============ MAIN SCRAPER ============
 def run_scraper(update_status_callback):
     driver = None
     scraped_at_str = datetime.now().strftime(SCRAPED_AT_FORMAT)
     scraped_at_dt = datetime.strptime(scraped_at_str, SCRAPED_AT_FORMAT)
 
-    seen_reviews = set()
+    # Berapa kali tiap kunci (pelabuhan+bintang+isi) sudah ada di CSV. Tiap ulasan hasil
+    # scraping 'memakai' satu kemunculan lama; yang tidak kebagian dianggap ulasan baru.
+    sisa_lama = Counter()
     stats = {
         "new": 0, "duplicate": 0, "with_photos": 0,
         "failed_targets": [], "max_scroll_reached": [],
-        "extraction_errors": 0,
+        "extraction_errors": 0, "tanpa_teks": 0,
     }
+
+    def lapor(pesan):
+        try:
+            update_status_callback(pesan)
+        except Exception:
+            pass
 
     if not ensure_csv_schema():
         return False, "Gagal migrasi skema CSV."
@@ -583,16 +567,9 @@ def run_scraper(update_status_callback):
         try:
             print(f"Memuat data lama dari {os.path.basename(CSV_PATH)}...")
             df_old = pd.read_csv(CSV_PATH)
-            for _, row in df_old.iterrows():
-                foto_status = row.get('memiliki_foto')
-                if pd.isna(foto_status) or str(foto_status).strip() == "":
-                    continue
-                h = _build_review_hash(
-                    row.get('lokasi', ''), row.get('pelabuhan', ''),
-                    row.get('nama_reviewer', ''), row.get('rating', 0),
-                    row.get('tanggal', ''), row.get('review', '')
-                )
-                seen_reviews.add(h)
+            for pel, rt, teks in zip(df_old["pelabuhan"], df_old["rating"], df_old["review"]):
+                if _punya_teks(teks):
+                    sisa_lama[_kunci_ulasan(pel, rt, teks)] += 1
         except Exception as e:
             print(f"⚠️ Baca CSV lama: {e}")
 
@@ -629,6 +606,7 @@ def run_scraper(update_status_callback):
                         print(f"\n{'#'*70}")
                         print(f"# Membuka {target['nama']}")
                         print(f"{'#'*70}")
+                        lapor(f"Mengambil ulasan: {target['nama']} ({stats['new']} ulasan baru)")
                         driver.get(target["url"])
                         time.sleep(5)
 
@@ -861,6 +839,7 @@ def run_scraper(update_status_callback):
                             new_data_found = False
 
                             if scroll_count % 5 == 0:
+                                lapor(f"{target['nama']}: scroll #{scroll_count}, {stats['new']} ulasan baru")
                                 print(
                                     f"📊 Scroll #{scroll_count} | "
                                     f"scrollTop: {int(current_scroll_top)}/{int(current_scroll_height)} | "
@@ -871,7 +850,10 @@ def run_scraper(update_status_callback):
                             for review in current_elements:
                                 try:
                                     review_id = review.get_attribute("data-review-id")
-                                    if review_id and review_id in seen_review_ids:
+                                    if not review_id:
+                                        # cadangan: identitas dari isi kartu (nama, tanggal, teks), stabil antar scroll
+                                        review_id = "txt:" + hashlib.md5(review.text.encode()).hexdigest()
+                                    if review_id in seen_review_ids:
                                         continue
 
                                     try:
@@ -883,7 +865,7 @@ def run_scraper(update_status_callback):
                                     except Exception:
                                         pass
 
-                                    nama = review.find_element(By.CSS_SELECTOR, ".d4r55").text.strip()
+                                    nama = ""  # nama reviewer tidak diambil lagi (kolom tetap ada, isinya kosong)
                                     rating_text = review.find_element(
                                         By.CSS_SELECTOR, "span.kvMYJc"
                                     ).get_attribute("aria-label")
@@ -908,7 +890,7 @@ def run_scraper(update_status_callback):
                                         kandidat = lines[lines.index(tanggal_raw) + 1:]
                                         teks_review = bersihkan_review("\n".join(kandidat))
 
-                                    final_review_text = teks_review if teks_review else "[Tanpa Teks]"
+                                    final_review_text = teks_review if teks_review else TEKS_KOSONG
 
                                     indicator = detect_photo_indicator(review)
                                     punya_media = indicator is not None
@@ -916,12 +898,17 @@ def run_scraper(update_status_callback):
                                     if review_id:
                                         seen_review_ids.add(review_id)
 
-                                    review_hash = _build_review_hash(
-                                        lokasi, target["nama"], nama, rating, tanggal, final_review_text
-                                    )
+                                    if not teks_review:
+                                        # tanpa teks: tidak bisa dicocokkan dan dibuang saat preprocessing
+                                        stats["tanpa_teks"] += 1
+                                        continue
 
-                                    if review_hash not in seen_reviews:
-                                        seen_reviews.add(review_hash)
+                                    review_key = _kunci_ulasan(target["nama"], rating, final_review_text)
+
+                                    if sisa_lama[review_key] > 0:
+                                        sisa_lama[review_key] -= 1
+                                        stats["duplicate"] += 1
+                                    else:
                                         new_data_found = True
                                         stats["new"] += 1
                                         if punya_media:
@@ -947,8 +934,6 @@ def run_scraper(update_status_callback):
                                         if len(batch_data) >= 50:
                                             save_batch(batch_data)
                                             batch_data.clear()
-                                    else:
-                                        stats["duplicate"] += 1
 
                                 except FatalScrapeError:
                                     raise
@@ -1002,24 +987,20 @@ def run_scraper(update_status_callback):
             print(f"🚨 FATAL: {fse}")
             return False, f"Fatal: {fse}"
 
-        print("\nDedup final...")
-        dedup_ok = dedup_csv_final()
-
-        msg = f"Selesai. {stats['new']} baru ({stats['with_photos']} media), {stats['duplicate']} dup."
+        msg = f"Selesai. {stats['new']} baru ({stats['with_photos']} media), {stats['duplicate']} sudah ada."
+        if stats["tanpa_teks"]:
+            msg += f" {stats['tanpa_teks']} tanpa teks dilewati."
         if stats["extraction_errors"] > 0:
             msg += f" ({stats['extraction_errors']} err)"
         if stats["max_scroll_reached"]:
             msg += f" ⚠️ Max scroll: {len(stats['max_scroll_reached'])}."
         if stats["failed_targets"]:
             msg += f" ❌ Gagal: {len(stats['failed_targets'])}."
-        if not dedup_ok:
-            msg += f" ❌ Dedup gagal."
         msg += f"\n📁 Output: {CSV_PATH}"
 
         success = (
             not stats["failed_targets"]
             and not stats["max_scroll_reached"]
-            and dedup_ok
         )
         return success, msg
 

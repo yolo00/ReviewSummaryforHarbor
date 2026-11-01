@@ -1,4 +1,5 @@
 import os
+import re
 import joblib
 import pandas as pd
 
@@ -7,6 +8,32 @@ try:
     from modules.preprocessing import TextPreprocessor
 except ModuleNotFoundError:
     from preprocessing import TextPreprocessor
+
+
+# Batas minimal kata untuk halaman Uji Sentimen
+MIN_KATA_UJI = 6
+
+
+class InputTidakValid(ValueError):
+    """Teks yang dimasukkan pengguna tidak dapat dianalisis (pesan siap tampil ke pengguna)."""
+
+
+def hitung_kata(text):
+    """Jumlah kata (rangkaian huruf); angka, simbol, dan emoji tidak dihitung."""
+    return len(re.findall(r"[^\W\d_]+", str(text)))
+
+
+def validasi_teks_uji(text):
+    text = (text or "").strip()
+    if not text:
+        raise InputTidakValid("Teks ulasan tidak boleh kosong.")
+    jumlah = hitung_kata(text)
+    if jumlah < MIN_KATA_UJI:
+        raise InputTidakValid(
+            f"Teks terlalu pendek: baru {jumlah} kata. "
+            f"Tulis minimal {MIN_KATA_UJI} kata agar model dapat menganalisis."
+        )
+    return text
 
 
 class SVMSentimentAnalyzer:
@@ -34,13 +61,21 @@ class SVMSentimentAnalyzer:
         if not self.pipeline:
             raise ValueError("Model pipeline belum dimuat.")
 
+        text = validasi_teks_uji(text)
+
         # 1. Preprocessing untuk teks mentah dari pengguna.
         clean = self.preprocessor.clean_text(text)
         slang = self.preprocessor.normalize_slang(clean)
         final_text = self.preprocessor.remove_stopwords_and_stem(slang)
 
-        # Gunakan final_text jika tidak kosong
-        input_for_model = final_text if final_text.strip() != "" else text
+        # Tidak ada kata bermakna tersisa -> tolak, jangan paksa prediksi
+        if final_text.strip() == "":
+            raise InputTidakValid(
+                "Teks tidak dapat dianalisis: tidak ada kata bermakna yang tersisa setelah "
+                "pembersihan (hanya kata umum, angka, atau simbol). "
+                "Tulis ulasan dengan kata yang lebih spesifik tentang pelabuhan."
+            )
+        input_for_model = final_text
 
         # 2. Prediksi
         probabilities = self.pipeline.predict_proba([input_for_model])[0]
