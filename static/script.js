@@ -1,92 +1,51 @@
-
 /* =========================================================
-   LOGIKA LANDING PAGE (INDEX) - UPDATE VALIDASI
-   ========================================================= */
-/* =========================================================
-   LOGIKA LANDING PAGE (INDEX) - UPDATE VALIDASI & RESET
+   LOGIKA LANDING PAGE (INDEX)
+   Multi-select pelabuhan memakai komponen yang sama dengan dashboard
+   (selectedPorts, renderPortChips, removePort, clearAllPorts).
    ========================================================= */
 document.addEventListener("DOMContentLoaded", () => {
     const btnMulai = document.getElementById('btnMulai');
+    if (!btnMulai) return;
 
-    if (btnMulai) {
-        btnMulai.addEventListener('click', function (e) {
-            const port = document.getElementById('selectPelabuhan').value;
-            
-            // Ambil elemen input agar bisa di-reset
-            const fromInput = document.getElementById('indexTanggalFrom');
-            const toInput   = document.getElementById('indexTanggalTo');
-            
-            const from = fromInput.value;
-            const to   = toInput.value;
+    btnMulai.addEventListener('click', function (e) {
+        const fromInput = document.getElementById('indexTanggalFrom');
+        const toInput   = document.getElementById('indexTanggalTo');
+        const from = fromInput.value;
+        const to   = toInput.value;
+        const todayStr = toLocalISODate(new Date());
 
-            const todayStr = toLocalISODate(new Date());
+        // 1. Tanggal 'Dari' tidak boleh melebihi hari ini
+        if (from && from > todayStr) {
+            e.preventDefault();
+            alert("Tanggal 'Dari' tidak boleh melebihi hari ini. (Input di-reset)");
+            fromInput.value = "";
+            return;
+        }
 
-            // 1. Cek Tanggal 'Dari' melebihi hari ini
-            if (from && from > todayStr) {
-                e.preventDefault(); 
-                alert("Tanggal 'Dari' tidak boleh melebihi hari ini. (Input di-reset)");
-                fromInput.value = ""; // Reset input yang salah
-                return;
-            }
-            
-            // 2. Cek Tanggal 'Sampai' melebihi hari ini
-            if (to && to > todayStr) {
-                e.preventDefault(); 
-                alert("Tanggal 'Sampai' tidak boleh melebihi hari ini. (Input di-reset)");
-                toInput.value = ""; // Reset input yang salah
-                return;
-            }
-            
-            // 3. Cek Tanggal 'Dari' melebihi Tanggal 'Sampai'
-            if (from && to && from > to) {
-                e.preventDefault(); 
-                alert("Tanggal 'Dari' tidak boleh melebihi tanggal 'Sampai'. (Input 'Sampai' di-reset)");
-                toInput.value = ""; // Reset input 'Sampai' yang salah
-                return;
-            }
+        // 2. Tanggal 'Sampai' tidak boleh melebihi hari ini
+        if (to && to > todayStr) {
+            e.preventDefault();
+            alert("Tanggal 'Sampai' tidak boleh melebihi hari ini. (Input di-reset)");
+            toInput.value = "";
+            return;
+        }
 
-            // Jika lolos validasi, simpan ke localStorage
-            let portsArr = port === "ALL" ? ["ALL"] : [port];
-            localStorage.setItem('selectedPorts', JSON.stringify(portsArr));
-            localStorage.setItem('filterTanggalFrom', from || '');
-            localStorage.setItem('filterTanggalTo',   to   || '');
-        });
-    }
-});
+        // 3. Tanggal 'Dari' tidak boleh melebihi tanggal 'Sampai'
+        if (from && to && from > to) {
+            e.preventDefault();
+            alert("Tanggal 'Dari' tidak boleh melebihi tanggal 'Sampai'. (Input 'Sampai' di-reset)");
+            toInput.value = "";
+            return;
+        }
 
-
-/* =========================================================
-   LOGIKA LANDING PAGE (INDEX) - UPDATE VALIDASI
-   ========================================================= */
-document.addEventListener("DOMContentLoaded", () => {
-    const btnMulai = document.getElementById('btnMulai');
-
-    if (btnMulai) {
-        btnMulai.addEventListener('click', function (e) {
-            const port = document.getElementById('selectPelabuhan').value;
-            const from = document.getElementById('indexTanggalFrom').value;
-            const to   = document.getElementById('indexTanggalTo').value;
-
-            const todayStr = toLocalISODate(new Date());
-
-            if (to && to > todayStr) {
-                e.preventDefault(); // Mencegah pindah halaman
-                alert("Tanggal 'Hingga' tidak boleh melebihi hari ini.");
-                return;
-            }
-            if (from && to && from > to) {
-                e.preventDefault(); // Mencegah pindah halaman
-                alert("Tanggal 'Dari' tidak boleh melebihi tanggal 'Hingga'.");
-                return;
-            }
-
-            // Simpan sebagai array JSON agar kompatibel dengan dashboard multi-select
-            let portsArr = port === "ALL" ? ["ALL"] : [port];
-            localStorage.setItem('selectedPorts', JSON.stringify(portsArr));
-            localStorage.setItem('filterTanggalFrom', from || '');
-            localStorage.setItem('filterTanggalTo',   to   || '');
-        });
-    }
+        // Lolos validasi: simpan sebagai array JSON (format yang dibaca dashboard)
+        const portsArr = (selectedPorts.length === 0 || selectedPorts.includes("ALL"))
+            ? ["ALL"]
+            : selectedPorts;
+        localStorage.setItem('selectedPorts', JSON.stringify(portsArr));
+        localStorage.setItem('filterTanggalFrom', from || '');
+        localStorage.setItem('filterTanggalTo',   to   || '');
+    });
 });
 
 /* =========================================================
@@ -282,23 +241,29 @@ document.addEventListener("DOMContentLoaded", () => {
             loadAllData();
         }
 
-        if (portSelect) {
-            portSelect.addEventListener('change', function() {
-                const val = this.value;
-                if (!val) return;
+    } else {
+        // Landing page: mulai dari "Semua Pelabuhan (Default)"
+        selectedPorts = ["ALL"];
+        renderPortChips();
+    }
 
-                if (val === "ALL") {
-                    selectedPorts = ["ALL"];
-                } else {
-                    selectedPorts = selectedPorts.filter(p => p !== "ALL");
-                    if (!selectedPorts.includes(val)) {
-                        selectedPorts.push(val);
-                    }
+    // Dropdown multi-pelabuhan: dipakai bersama oleh landing page dan dashboard
+    if (portSelect) {
+        portSelect.addEventListener('change', function() {
+            const val = this.value;
+            if (!val) return;
+
+            if (val === "ALL") {
+                selectedPorts = ["ALL"];
+            } else {
+                selectedPorts = selectedPorts.filter(p => p !== "ALL");
+                if (!selectedPorts.includes(val)) {
+                    selectedPorts.push(val);
                 }
-                this.value = "";
-                updateFilterState();
-            });
-        }
+            }
+            this.value = "";
+            updateFilterState();
+        });
     }
 });
 
@@ -343,6 +308,12 @@ function resetTanggalFilter() {
 }
 
 function updateFilterState() {
+    // Landing page tidak punya filter tanggal dashboard: cukup perbarui chip pelabuhan
+    if (!document.getElementById("filterTanggalFrom")) {
+        renderPortChips();
+        return;
+    }
+
     const fromISO = document.getElementById("filterTanggalFrom").value || null;
     const toISO   = document.getElementById("filterTanggalTo").value || null;
 
@@ -1192,7 +1163,7 @@ async function predictSingleText() {
     resultDiv.removeAttribute("style");
     resultDiv.className = "alert alert-secondary mt-3 mb-0 shadow-sm";
     resultDiv.innerHTML = '<div class="spinner-border spinner-border-sm me-2" style="color: var(--primary);"></div> Memproses...';
-
+    
     if (!(await siapkanModelUji())) {
         tampilkanError("Model belum dapat dimuat. Pastikan model sudah dilatih, lalu coba lagi.");
         return;
