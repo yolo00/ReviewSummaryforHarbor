@@ -49,13 +49,14 @@
         </div>
     </div>
 
-    <!-- Filter Box (Floating) -->
+        <!-- Filter Box (Floating) -->
     <div class="container">
         <div class="filter-card">
             <div class="row g-3 align-items-end">
-                <!-- Pilih Pelabuhan -->
-                <div class="col-lg-4 col-md-12">
-                    <label class="filter-label">Pilih Pelabuhan</label>
+                
+                <!-- Pilih Pelabuhan (Lebar 4) -->
+                <div class="col-12 col-lg-4">
+                    <label class="filter-label mb-1">Pilih Pelabuhan</label>
                     <div class="input-group">
                         <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-location-dot text-dark"></i></span>
                         <select id="selectPelabuhan" class="form-select border-start-0 ps-0 fw-500">
@@ -69,32 +70,32 @@
                     </div>
                 </div>
 
-                <!-- Rentang Tanggal -->
-                <div class="col-lg-4 col-md-12">
-                    <label class="filter-label">Rentang Tanggal</label>
-                    <div class="row g-2">
-                        <div class="col-6">
-                            <div class="input-group">
-                                <span class="input-group-text bg-white border-end-0"><i class="fa-regular fa-calendar text-dark"></i></span>
-                                <!-- Pastikan ID-nya indexTanggalFrom -->
-                                <input type="date" id="indexTanggalFrom" class="form-control border-start-0 ps-0 fw-500" style="font-size: 13px;">
-                            </div>
+                <!-- Rentang Tanggal (Lebar 4) -->
+                <div class="col-12 col-lg-4">
+                    <label class="filter-label mb-1">Rentang Tanggal</label>
+                    <div class="d-flex gap-2">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0 px-2"><i class="fa-regular fa-calendar text-dark"></i></span>
+                            <input type="date" id="indexTanggalFrom" class="form-control border-start-0 px-1 fw-500" style="font-size: 13px;" title="Dari Tanggal">
                         </div>
-                        <div class="col-6">
-                            <div class="input-group">
-                                <span class="input-group-text bg-white border-end-0"><i class="fa-regular fa-calendar text-dark"></i></span>
-                                <!-- Pastikan ID-nya indexTanggalTo -->
-                                <input type="date" id="indexTanggalTo" class="form-control border-start-0 ps-0 fw-500" style="font-size: 13px;">
-                            </div>
+                        <div class="input-group">
+                            <span class="input-group-text bg-white border-end-0 px-2"><i class="fa-regular fa-calendar text-dark"></i></span>
+                            <input type="date" id="indexTanggalTo" class="form-control border-start-0 px-1 fw-500" style="font-size: 13px;" title="Sampai Tanggal">
                         </div>
                     </div>
+                </div>
 
-                <!-- Tombol Mulai Analisis -->
-                <div class="col-lg-4 col-md-12 mt-lg-0 mt-3">
-                    <a href="/dashboard" id="btnMulai" class="btn btn-primary-custom text-white w-100 d-flex justify-content-center align-items-center gap-2">
+                <!-- Tombol Mulai Analisis (Lebar 4) -->
+                <div class="col-12 col-lg-4">
+                    <!-- Label kosong agar sejajar dengan kolom lain di desktop -->
+                    <label class="filter-label mb-1 d-none d-lg-block">&nbsp;</label>
+                    
+                    <!-- Gunakan height: 38px agar tingginya sama persis dengan input form -->
+                    <a href="/dashboard" id="btnMulai" class="btn btn-primary-custom text-white w-100 d-flex justify-content-center align-items-center gap-2" style="height: 38px; padding: 0; white-space: nowrap;">
                         <i class="fa-solid fa-magnifying-glass"></i> Mulai Analisis <i class="fa-solid fa-arrow-right"></i>
                     </a>
                 </div>
+
             </div>
         </div>
     </div>
