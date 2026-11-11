@@ -23,7 +23,7 @@
     /* Hover States (Sesuai Request) */
     --hover-bg:        rgba(144, 202, 249, 0.4);  /* #90CAF9 transparan */
     --hover-bg-solid:  #90CAF9;                    /* untuk tombol solid */
-    --hover-text:      #2196F3;                    /* secondary */
+    --hover-text:      #0D47A1;                    /* secondary */
 
     /* Layout */
     --sidebar-width: 280px;
@@ -144,6 +144,20 @@ body.dashboard-page { background-color: var(--bg-page); }
 }
 
 .filter-label { font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; }
+
+/* Link "Hapus Semua Pilihan" pada filter landing page */
+.filter-card .clear-ports-btn {
+    font-size: 11px;
+    color: var(--negatif);
+    border-radius: 6px;
+    transition: all .2s ease;
+}
+.filter-card .clear-ports-btn:hover {
+    background-color: var(--hover-bg);
+    color: var(--hover-text) !important;
+    padding: 2px 6px !important;
+    margin: -2px -6px;
+}
 
 /* Tombol Utama */
 .btn-primary,
