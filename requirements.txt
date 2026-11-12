@@ -1,0 +1,13 @@
+flask
+pandas
+numpy
+scikit-learn
+joblib
+matplotlib
+seaborn
+wordcloud
+selenium
+Sastrawi
+deep-translator
+langdetect
+emoji

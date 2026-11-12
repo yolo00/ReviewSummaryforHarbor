@@ -94,7 +94,9 @@ def parse_ports_arg(ports_str):
 def _resolve_ports_from_request():
     ports = parse_ports_arg(request.args.get("ports", ""))
     legacy = (request.args.get("port") or "").strip()
-    if not ports and legacy and legacy.upper() != "ALL": ports = [legacy]
+    if not ports and legacy and legacy.upper() != "ALL":
+        # `port` lama bisa berisi beberapa pelabuhan dipisah koma ("A,B")
+        ports = [p for p in parse_ports_arg(legacy) if p.upper() != "ALL"]
     return ports
 
 def apply_data_filters(df, ports, from_date, to_date):
@@ -273,12 +275,21 @@ def get_charts():
     except Exception as e: return jsonify({"status": "error", "message": str(e)}), 500
 
     df = apply_data_filters(df, ports, from_date, to_date)
-    if df.empty: return jsonify({"status": "error", "message": "Tidak ada data setelah filter.", "charts": {}}), 200
 
     try:
+        # Confusion matrix = evaluasi global model, tidak bergantung pada filter,
+        # jadi selalu dikirim walaupun filter tidak menghasilkan baris.
+        charts = {"confusion_matrix": viz.chart_confusion_matrix()}
+        message = None
+        if df.empty:
+            message = "Tidak ada data setelah filter."
+        else:
+            charts["wordcloud"] = viz.chart_wordcloud(df)
+            charts["heatmap"] = viz.chart_heatmap(df)
         return jsonify({
             "status": "success",
-            "charts": { "wordcloud": viz.chart_wordcloud(df), "heatmap": viz.chart_heatmap(df), "confusion_matrix": viz.chart_confusion_matrix() },
+            "message": message,
+            "charts": charts,
             "meta": { "source": os.path.basename(proc_path), "rows_after_filter": int(len(df)) }
         })
     except Exception as e:

@@ -209,6 +209,8 @@ function switchPage(pageId, element) {
     if (pageId === 'popularitas') { renderChartPopularitas(); renderChartRatingVolume(); }
     if (pageId === 'tren')        { renderChartTrenVolume(); renderChartTrenAspek(); }
     if (pageId === 'aspek')       { renderChartAspekStacked(); }
+    // Skor evaluasi (evaluation.json) dimuat sekali saat halaman Sentimen & Evaluasi dibuka
+    if (pageId === 'sentimen')    { loadEvaluation(); }
     // Muat model hanya saat halaman Uji Sentimen dibuka
     if (pageId === 'uji')         { siapkanModelUji(); }
 }
@@ -813,12 +815,14 @@ function renderChartAspekStacked() {
 /* ============ 2. FETCH GAMBAR PYTHON ============ */
 let chartRequestSeq = 0;
 
-async function refreshChartsFromPython(port, from, to) {
+async function refreshChartsFromPython(ports, from, to) {
     const mySeq = ++chartRequestSeq;
+    // `ports` = daftar pelabuhan dipisah koma ("" = semua pelabuhan).
+    // Harus dikirim sebagai `ports`; parameter lama `port` hanya untuk satu pelabuhan.
     const params = new URLSearchParams({
-        port: port || "ALL",
-        from: from || "",
-        to:   to   || ""
+        ports: ports || "",
+        from:  from  || "",
+        to:    to    || ""
     });
     const imgIds = ["imgWordcloud", "imgHeatmap", "imgConfusion"];
 
@@ -845,12 +849,20 @@ async function refreshChartsFromPython(port, from, to) {
 
         for (const [id, base64] of Object.entries(mapping)) {
             const imgEl = document.getElementById(id);
-            if (imgEl && base64) {
+            if (!imgEl) continue;
+            const fallback = document.getElementById(id + 'Fallback');
+            if (base64) {
                 imgEl.src = base64;
                 imgEl.alt = "";
                 imgEl.style.display = ""; // pastikan tampil kembali
-                const fallback = document.getElementById(id + 'Fallback');
                 if (fallback) fallback.style.display = 'none';
+            } else {
+                // Tidak ada gambar untuk filter ini (mis. data kosong):
+                // jangan biarkan gambar filter sebelumnya tetap tampil.
+                imgEl.removeAttribute('src');
+                imgEl.alt = "";
+                imgEl.style.display = 'none';
+                if (fallback) fallback.style.display = 'block';
             }
         }
     } catch (err) {
@@ -1092,6 +1104,142 @@ function getReviewDateISO(row) {
     }
     const d = parseRelativeToDate(row.tanggal, base);
     return d ? toLocalISODate(d) : null;
+}
+
+/* ============ Skor Evaluasi Model (evaluation.json) ============ */
+let evaluationLoaded = false;
+let evaluationPromise = null;
+
+const EVAL_CLASS_ORDER = ["POSITIF", "NETRAL", "NEGATIF"];
+const EVAL_CLASS_META = {
+    POSITIF: { label: "Positif", color: "var(--positif)" },
+    NETRAL:  { label: "Netral",  color: "var(--netral)"  },
+    NEGATIF: { label: "Negatif", color: "var(--negatif)" }
+};
+
+function fmtScore(v) {
+    const n = Number(v);
+    return Number.isFinite(n) ? (n * 100).toFixed(2) + "%" : "-";
+}
+
+function renderEvaluation(r) {
+    const setText = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = val;
+    };
+    const macro = r.macro_avg || {};
+    const weighted = r.weighted_avg || {};
+    const per = r.per_class || {};
+
+    setText("evalAccuracy", fmtScore(r.accuracy));
+    setText("evalAccuracySub", r.n_test ? `dari ${r.n_test} data uji` : "pada data uji");
+    setText("evalPrecision", fmtScore(macro.precision));
+    setText("evalRecall", fmtScore(macro.recall));
+    setText("evalF1", fmtScore(macro.f1_score));
+
+    // Keterangan singkat di bawah judul
+    const metaParts = [];
+    if (r.n_test) metaParts.push(`${r.n_test} data uji`);
+    if (r.config && r.config.svm && r.config.svm.kernel) metaParts.push(`SVM kernel ${r.config.svm.kernel} + TF-IDF`);
+    if (r.generated_at) {
+        const d = new Date(r.generated_at);
+        if (!isNaN(d)) {
+            metaParts.push("dihasilkan " + d.toLocaleString("id-ID", {
+                day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"
+            }));
+        }
+    }
+    const metaEl = document.getElementById("evalMeta");
+    if (metaEl) {
+        metaEl.className = "text-muted small mb-3";
+        metaEl.textContent = metaParts.join(" • ") || "Hasil evaluasi model pada data uji.";
+    }
+
+    // Tabel per kelas + baris rata-rata
+    const classes = EVAL_CLASS_ORDER.filter(k => per[k])
+        .concat(Object.keys(per).filter(k => !EVAL_CLASS_ORDER.includes(k)));
+
+    const f1Cell = (f1, color) => {
+        const width = Math.max(0, Math.min(100, (Number(f1) || 0) * 100));
+        return `<div class="eval-f1"><span>${fmtScore(f1)}</span>
+                    <div class="eval-bar"><span style="width:${width}%; background:${color};"></span></div></div>`;
+    };
+
+    let rows = classes.map(k => {
+        const m = per[k];
+        const meta = EVAL_CLASS_META[k] || { label: k, color: "var(--primary)" };
+        return `<tr>
+            <td><span class="eval-dot" style="background:${meta.color};"></span>${escapeHtml(meta.label)}</td>
+            <td class="text-end">${fmtScore(m.precision)}</td>
+            <td class="text-end">${fmtScore(m.recall)}</td>
+            <td>${f1Cell(m.f1_score, meta.color)}</td>
+            <td class="text-end">${escapeHtml(m.support ?? "-")}</td>
+        </tr>`;
+    }).join("");
+
+    const avgRow = (label, m) => `<tr class="eval-avg">
+            <td>${label}</td>
+            <td class="text-end">${fmtScore(m.precision)}</td>
+            <td class="text-end">${fmtScore(m.recall)}</td>
+            <td>${f1Cell(m.f1_score, "var(--primary)")}</td>
+            <td class="text-end">${escapeHtml(r.n_test ?? "-")}</td>
+        </tr>`;
+    rows += avgRow("Rata-rata makro", macro) + avgRow("Rata-rata tertimbang", weighted);
+
+    const tbody = document.getElementById("evalTableBody");
+    if (tbody) tbody.innerHTML = rows;
+
+    // Catatan otomatis: kelas terlemah & efek ketidakseimbangan kelas
+    const noteEl = document.getElementById("evalNote");
+    if (noteEl && classes.length) {
+        const weakest = classes.reduce((a, b) => (per[b].f1_score < per[a].f1_score ? b : a));
+        const wMeta = EVAL_CLASS_META[weakest] || { label: weakest };
+        let note = `Kelas paling lemah: <b>${escapeHtml(wMeta.label)}</b> `
+                 + `(F1 ${fmtScore(per[weakest].f1_score)}, recall ${fmtScore(per[weakest].recall)}).`;
+
+        const totalSupport = classes.reduce((sum, k) => sum + (Number(per[k].support) || 0), 0);
+        const biggest = classes.reduce((a, b) => (per[b].support > per[a].support ? b : a));
+        const share = totalSupport ? (Number(per[biggest].support) / totalSupport) : 0;
+        if (share >= 0.5 && Number(r.accuracy) - Number(macro.f1_score) > 0.05) {
+            const bMeta = EVAL_CLASS_META[biggest] || { label: biggest };
+            note += ` Akurasi lebih tinggi dari F1 rata-rata makro karena kelas <b>${escapeHtml(bMeta.label)}</b> `
+                  + `mendominasi data uji (${(share * 100).toFixed(1)}%).`;
+        }
+        noteEl.innerHTML = note;
+        noteEl.classList.remove("d-none");
+    }
+}
+
+function showEvaluationError(message) {
+    const metaEl = document.getElementById("evalMeta");
+    if (metaEl) {
+        metaEl.className = "text-danger small mb-3";
+        metaEl.textContent = (message || "Skor evaluasi belum dapat dimuat.") + " Latih model terlebih dahulu bila belum ada.";
+    }
+    const tbody = document.getElementById("evalTableBody");
+    if (tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Skor evaluasi belum tersedia.</td></tr>`;
+}
+
+// Muat sekali (evaluasi bersifat global, tidak mengikuti filter); coba lagi bila sebelumnya gagal.
+function loadEvaluation() {
+    if (evaluationLoaded) return Promise.resolve(true);
+    if (evaluationPromise) return evaluationPromise;
+    evaluationPromise = fetch("/get-evaluation")
+        .then(res => res.json().then(data => ({ ok: res.ok, data })))
+        .then(({ ok, data }) => {
+            if (!ok || data.status !== "success" || !data.data) {
+                throw new Error(data.message || "Laporan evaluasi belum ada.");
+            }
+            renderEvaluation(data.data);
+            evaluationLoaded = true;
+            return true;
+        })
+        .catch(err => {
+            showEvaluationError(err.message);
+            return false;
+        })
+        .finally(() => { evaluationPromise = null; });
+    return evaluationPromise;
 }
 
 /* ============ Uji Sentimen ============ */

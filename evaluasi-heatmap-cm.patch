@@ -1,0 +1,638 @@
+diff --git a/app.py b/app.py
+index 69441cd..047d6c7 100644
+--- a/app.py
++++ b/app.py
+@@ -94,7 +94,9 @@ def parse_ports_arg(ports_str):
+ def _resolve_ports_from_request():
+     ports = parse_ports_arg(request.args.get("ports", ""))
+     legacy = (request.args.get("port") or "").strip()
+-    if not ports and legacy and legacy.upper() != "ALL": ports = [legacy]
++    if not ports and legacy and legacy.upper() != "ALL":
++        # `port` lama bisa berisi beberapa pelabuhan dipisah koma ("A,B")
++        ports = [p for p in parse_ports_arg(legacy) if p.upper() != "ALL"]
+     return ports
+ 
+ def apply_data_filters(df, ports, from_date, to_date):
+@@ -273,12 +275,21 @@ def get_charts():
+     except Exception as e: return jsonify({"status": "error", "message": str(e)}), 500
+ 
+     df = apply_data_filters(df, ports, from_date, to_date)
+-    if df.empty: return jsonify({"status": "error", "message": "Tidak ada data setelah filter.", "charts": {}}), 200
+ 
+     try:
++        # Confusion matrix = evaluasi global model, tidak bergantung pada filter,
++        # jadi selalu dikirim walaupun filter tidak menghasilkan baris.
++        charts = {"confusion_matrix": viz.chart_confusion_matrix()}
++        message = None
++        if df.empty:
++            message = "Tidak ada data setelah filter."
++        else:
++            charts["wordcloud"] = viz.chart_wordcloud(df)
++            charts["heatmap"] = viz.chart_heatmap(df)
+         return jsonify({
+             "status": "success",
+-            "charts": { "wordcloud": viz.chart_wordcloud(df), "heatmap": viz.chart_heatmap(df), "confusion_matrix": viz.chart_confusion_matrix() },
++            "message": message,
++            "charts": charts,
+             "meta": { "source": os.path.basename(proc_path), "rows_after_filter": int(len(df)) }
+         })
+     except Exception as e:
+diff --git a/modules/visualization.py b/modules/visualization.py
+index 5627615..206dae6 100644
+--- a/modules/visualization.py
++++ b/modules/visualization.py
+@@ -23,6 +23,8 @@ import seaborn as sns
+ import pandas as pd
+ import numpy as np
+ from wordcloud import WordCloud
++from matplotlib.colors import LinearSegmentedColormap
++from matplotlib.patches import Rectangle
+ 
+ # Gaya konsisten
+ sns.set_style("whitegrid")
+@@ -164,9 +166,9 @@ def audit_aspect_coverage(df, sample_missing=8, sample_hits=3):
+                 print(f"      · {ex_short}")
+ 
+ 
+-def _fig_to_base64(fig):
++def _fig_to_base64(fig, dpi=110):
+     buf = io.BytesIO()
+-    fig.savefig(buf, format="png", bbox_inches="tight", dpi=110, facecolor="white")
++    fig.savefig(buf, format="png", bbox_inches="tight", dpi=dpi, facecolor="white")
+     buf.seek(0)
+     img = base64.b64encode(buf.read()).decode("utf-8")
+     plt.close(fig)
+@@ -469,54 +471,101 @@ def chart_wordcloud(df, only_negative=False, extra_stopwords=None):
+     return _fig_to_base64(fig)
+ 
+ 
+-def chart_heatmap(df, mode="count"):
+-    """
+-    Heatmap sentimen per pelabuhan.
++# Urutan & warna sentimen untuk heatmap/confusion matrix. Disamakan dengan
++# dashboard (donut, KPI) supaya konsisten: Positif -> Netral -> Negatif.
++SENTIMENT_ORDER = ("POSITIF", "NETRAL", "NEGATIF")
++SENTIMENT_LABELS = {"POSITIF": "Positif", "NETRAL": "Netral", "NEGATIF": "Negatif"}
++SENTIMENT_COLORS = {"POSITIF": "#00B809", "NETRAL": "#FFCC00", "NEGATIF": "#9D0003"}
++# Batas atas skala warna heatmap (dalam %). Tetap (tidak bergantung filter) agar
++# arti warna sama untuk satu pelabuhan maupun banyak pelabuhan.
++HEATMAP_VMAX = {"POSITIF": 100.0, "NETRAL": 50.0, "NEGATIF": 50.0}
++_MUTED = "#6c757d"
++
++
++def _sentiment_cmap(sentiment):
++    """Putih -> warna sentimen. Intensitas = besar nilai, hue = jenis sentimen."""
++    return LinearSegmentedColormap.from_list(
++        f"w_{sentiment}", ["#FFFFFF", SENTIMENT_COLORS[sentiment]]
++    )
++
+ 
+-    mode="count"   : jumlah ulasan (default). Volume absolut.
+-    mode="percent" : persentase komposisi sentimen per pelabuhan. Lebih adil
+-                     untuk membandingkan pelabuhan dengan volume berbeda.
++def chart_heatmap(df):
++    """
++    Heatmap komposisi sentimen per pelabuhan.
++
++    - Angka utama = persentase ulasan pelabuhan tsb. (tiap baris berjumlah 100%),
++      angka dalam kurung = jumlah ulasan. Dengan begitu pelabuhan ber-volume
++      besar tidak otomatis tampak "lebih baik".
++    - Warna per kolom memakai hue sentimennya (hijau/kuning/merah) dengan skala
++      tetap (HEATMAP_VMAX), jadi intensitas berarti sama untuk filter apa pun.
++    - Baris diurutkan dari volume ulasan terbanyak; volume ditulis di label baris.
+     """
+     df = _normalize_sentiment(df)
+     if "lokasi" not in df.columns or "_sentimen" not in df.columns:
+         return _placeholder("Data tidak cukup")
+ 
+-    pivot = pd.crosstab(df["lokasi"], df["_sentimen"])
+-    for col in ("POSITIF", "NETRAL", "NEGATIF"):
+-        if col not in pivot.columns:
+-            pivot[col] = 0
+-    pivot = pivot[["POSITIF", "NETRAL", "NEGATIF"]]
+-    if pivot.empty:
++    counts = pd.crosstab(df["lokasi"], df["_sentimen"])
++    for col in SENTIMENT_ORDER:
++        if col not in counts.columns:
++            counts[col] = 0
++    counts = counts[list(SENTIMENT_ORDER)]
++    counts = counts[counts.sum(axis=1) > 0]
++    if counts.empty:
+         return _placeholder("Data terlalu sedikit")
+ 
+-    fig, ax = plt.subplots(figsize=(7, 4))
++    totals = counts.sum(axis=1).sort_values(ascending=False)
++    counts = counts.loc[totals.index]
++    pct = counts.div(totals, axis=0) * 100
++
++    annot = pd.DataFrame(
++        [
++            [f"{pct.iloc[i, j]:.1f}%\n({int(counts.iloc[i, j])})" for j in range(len(SENTIMENT_ORDER))]
++            for i in range(len(counts))
++        ],
++        index=counts.index, columns=counts.columns,
++    )
+ 
+-    if mode == "percent":
+-        row_total = pivot.sum(axis=1).replace(0, np.nan)
+-        pct = (pivot.div(row_total, axis=0) * 100).fillna(0)
+-        annot = np.vectorize(lambda v: f"{v:.1f}%")(pct.values)
++    n_rows = len(counts)
++    fig, ax = plt.subplots(figsize=(7.5, 2.0 + 0.8 * n_rows))
++    for j, sent in enumerate(SENTIMENT_ORDER):
++        mask = np.ones(pct.shape, dtype=bool)
++        mask[:, j] = False  # gambar satu kolom per panggilan, skala warna sendiri
+         sns.heatmap(
+-            pct, annot=annot, fmt="", cmap="RdYlGn",
+-            cbar=True, linewidths=2, linecolor="white",
++            pct, mask=mask, annot=annot, fmt="",
++            cmap=_sentiment_cmap(sent), vmin=0, vmax=HEATMAP_VMAX[sent],
++            cbar=False, linewidths=3, linecolor="white",
+             annot_kws={"fontsize": 10, "fontweight": "bold"}, ax=ax,
+         )
+-        title = "Persentase Sentimen per Pelabuhan"
+-    else:
+-        sns.heatmap(
+-            pivot, annot=True, fmt="d", cmap="RdYlGn",
+-            cbar=True, linewidths=2, linecolor="white",
+-            annot_kws={"fontsize": 11, "fontweight": "bold"}, ax=ax,
+-        )
+-        title = "Jumlah Ulasan per Sentimen & Pelabuhan"
+ 
+-    ax.set_title(title, fontsize=13, pad=10)
+-    ax.set_xlabel("Sentimen")
+-    ax.set_ylabel("Pelabuhan")
++    ax.grid(False)
++    ax.set_xticklabels([SENTIMENT_LABELS[c] for c in SENTIMENT_ORDER], rotation=0, fontsize=10)
++    ax.set_yticklabels(
++        [f"{name}\n(n={int(totals[name])})" for name in counts.index], rotation=0, fontsize=10
++    )
++    ax.tick_params(axis="both", length=0)
++    ax.set_xlabel("")
++    ax.set_ylabel("")
++    ax.set_title("Komposisi Sentimen per Pelabuhan", fontsize=13, pad=34)
++    ax.text(
++        0.5, 1.03,
++        "Angka = % ulasan pelabuhan (jumlah ulasan). Skala warna tetap: "
++        "Positif 0-100%, Netral & Negatif 0-50%.",
++        transform=ax.transAxes, ha="center", va="bottom", fontsize=8, color=_MUTED,
++    )
+     fig.tight_layout()
+-    return _fig_to_base64(fig)
++    return _fig_to_base64(fig, dpi=140)
+ 
+ 
+ def chart_confusion_matrix(eval_path="data/models/evaluation.json"):
++    """
++    Confusion matrix dari evaluation.json (evaluasi global, tidak mengikuti filter).
++
++    - Baris = kelas aktual, kolom = prediksi, urutan Positif -> Netral -> Negatif.
++    - Warna & persentase dinormalisasi PER BARIS (porsi dari kelas aktual),
++      jadi diagonal = recall. Kelas minoritas (mis. Netral) tetap terbaca
++      meski jumlahnya jauh lebih kecil dari kelas Positif.
++    - Jumlah mentah tetap tampil di tiap sel; n per kelas ada di label baris.
++    """
+     if not os.path.exists(eval_path):
+         return _placeholder("Model belum dilatih")
+     try:
+@@ -531,7 +580,7 @@ def chart_confusion_matrix(eval_path="data/models/evaluation.json"):
+     if not matrix or not labels:
+         return _placeholder("Confusion matrix tidak tersedia")
+ 
+-    arr = np.array(matrix)
++    arr = np.array(matrix, dtype=float)
+     # [FIX G] Validasi dimensi matriks vs jumlah label.
+     if arr.ndim != 2 or arr.shape != (len(labels), len(labels)):
+         return _placeholder(
+@@ -539,21 +588,54 @@ def chart_confusion_matrix(eval_path="data/models/evaluation.json"):
+             f"shape={arr.shape}, labels={len(labels)}"
+         )
+ 
+-    fig, ax = plt.subplots(figsize=(5.5, 4.5))
++    # Samakan urutan label dengan bagian dashboard lain.
++    labels = [str(l).strip().upper() for l in labels]
++    order = [l for l in SENTIMENT_ORDER if l in labels] + [l for l in labels if l not in SENTIMENT_ORDER]
++    idx = [labels.index(l) for l in order]
++    arr = arr[np.ix_(idx, idx)]
++    labels = order
++
++    support = arr.sum(axis=1)
++    total = float(arr.sum())
++    norm = np.divide(arr, support[:, None], out=np.zeros_like(arr), where=support[:, None] > 0)
++    accuracy = report.get("accuracy")
++    if accuracy is None:
++        accuracy = float(np.trace(arr) / total) if total else 0.0
++
++    annot = np.array(
++        [[f"{int(arr[i, j])}\n{norm[i, j] * 100:.1f}%" for j in range(len(labels))] for i in range(len(labels))]
++    )
++    names = [SENTIMENT_LABELS.get(l, l.title()) for l in labels]
++
++    fig, ax = plt.subplots(figsize=(6.2, 5.2))
+     sns.heatmap(
+-        arr, annot=True, fmt="d", cmap="Blues",
+-        xticklabels=labels, yticklabels=labels,
+-        linewidths=2, linecolor="white", cbar=False,
+-        annot_kws={"fontsize": 12, "fontweight": "bold"}, ax=ax,
++        norm, annot=annot, fmt="", cmap="Blues", vmin=0, vmax=1,
++        xticklabels=names,
++        yticklabels=[f"{n}\n(n={int(s)})" for n, s in zip(names, support)],
++        linewidths=3, linecolor="white", cbar=False,
++        annot_kws={"fontsize": 11, "fontweight": "bold"}, ax=ax,
+     )
++    # Bingkai tipis pada diagonal (prediksi benar) agar mudah dibedakan.
++    for i in range(len(labels)):
++        ax.add_patch(Rectangle((i, i), 1, 1, fill=False, edgecolor=COLORS["primary"], lw=2.4, clip_on=False))
++
++    ax.grid(False)
++    ax.tick_params(axis="both", length=0)
++    ax.tick_params(axis="x", labelrotation=0)
++    ax.tick_params(axis="y", labelrotation=0)
++    ax.set_xlabel("Prediksi", labelpad=10)
++    ax.set_ylabel("Aktual", labelpad=12)
+     ax.set_title(
+-        f"Confusion Matrix (Akurasi: {report.get('accuracy', 0):.2%})",
+-        fontsize=12, pad=10,
++        f"Confusion Matrix\nAkurasi {accuracy:.2%}  •  {int(total)} data uji",
++        fontsize=12, pad=12,
++    )
++    fig.text(
++        0.5, -0.01,
++        "Warna & persentase = porsi dari kelas aktual (diagonal = recall). Angka besar = jumlah ulasan.",
++        ha="center", va="top", fontsize=8, color=_MUTED,
+     )
+-    ax.set_xlabel("Prediksi")
+-    ax.set_ylabel("Aktual")
+     fig.tight_layout()
+-    return _fig_to_base64(fig)
++    return _fig_to_base64(fig, dpi=140)
+ 
+ 
+ def _placeholder(msg):
+diff --git a/static/script.js b/static/script.js
+index 12a3efb..e0db3f7 100644
+--- a/static/script.js
++++ b/static/script.js
+@@ -209,6 +209,8 @@ function switchPage(pageId, element) {
+     if (pageId === 'popularitas') { renderChartPopularitas(); renderChartRatingVolume(); }
+     if (pageId === 'tren')        { renderChartTrenVolume(); renderChartTrenAspek(); }
+     if (pageId === 'aspek')       { renderChartAspekStacked(); }
++    // Skor evaluasi (evaluation.json) dimuat sekali saat halaman Sentimen & Evaluasi dibuka
++    if (pageId === 'sentimen')    { loadEvaluation(); }
+     // Muat model hanya saat halaman Uji Sentimen dibuka
+     if (pageId === 'uji')         { siapkanModelUji(); }
+ }
+@@ -813,12 +815,14 @@ function renderChartAspekStacked() {
+ /* ============ 2. FETCH GAMBAR PYTHON ============ */
+ let chartRequestSeq = 0;
+ 
+-async function refreshChartsFromPython(port, from, to) {
++async function refreshChartsFromPython(ports, from, to) {
+     const mySeq = ++chartRequestSeq;
++    // `ports` = daftar pelabuhan dipisah koma ("" = semua pelabuhan).
++    // Harus dikirim sebagai `ports`; parameter lama `port` hanya untuk satu pelabuhan.
+     const params = new URLSearchParams({
+-        port: port || "ALL",
+-        from: from || "",
+-        to:   to   || ""
++        ports: ports || "",
++        from:  from  || "",
++        to:    to    || ""
+     });
+     const imgIds = ["imgWordcloud", "imgHeatmap", "imgConfusion"];
+ 
+@@ -845,12 +849,20 @@ async function refreshChartsFromPython(port, from, to) {
+ 
+         for (const [id, base64] of Object.entries(mapping)) {
+             const imgEl = document.getElementById(id);
+-            if (imgEl && base64) {
++            if (!imgEl) continue;
++            const fallback = document.getElementById(id + 'Fallback');
++            if (base64) {
+                 imgEl.src = base64;
+                 imgEl.alt = "";
+                 imgEl.style.display = ""; // pastikan tampil kembali
+-                const fallback = document.getElementById(id + 'Fallback');
+                 if (fallback) fallback.style.display = 'none';
++            } else {
++                // Tidak ada gambar untuk filter ini (mis. data kosong):
++                // jangan biarkan gambar filter sebelumnya tetap tampil.
++                imgEl.removeAttribute('src');
++                imgEl.alt = "";
++                imgEl.style.display = 'none';
++                if (fallback) fallback.style.display = 'block';
+             }
+         }
+     } catch (err) {
+@@ -1094,6 +1106,142 @@ function getReviewDateISO(row) {
+     return d ? toLocalISODate(d) : null;
+ }
+ 
++/* ============ Skor Evaluasi Model (evaluation.json) ============ */
++let evaluationLoaded = false;
++let evaluationPromise = null;
++
++const EVAL_CLASS_ORDER = ["POSITIF", "NETRAL", "NEGATIF"];
++const EVAL_CLASS_META = {
++    POSITIF: { label: "Positif", color: "var(--positif)" },
++    NETRAL:  { label: "Netral",  color: "var(--netral)"  },
++    NEGATIF: { label: "Negatif", color: "var(--negatif)" }
++};
++
++function fmtScore(v) {
++    const n = Number(v);
++    return Number.isFinite(n) ? (n * 100).toFixed(2) + "%" : "-";
++}
++
++function renderEvaluation(r) {
++    const setText = (id, val) => {
++        const el = document.getElementById(id);
++        if (el) el.textContent = val;
++    };
++    const macro = r.macro_avg || {};
++    const weighted = r.weighted_avg || {};
++    const per = r.per_class || {};
++
++    setText("evalAccuracy", fmtScore(r.accuracy));
++    setText("evalAccuracySub", r.n_test ? `dari ${r.n_test} data uji` : "pada data uji");
++    setText("evalPrecision", fmtScore(macro.precision));
++    setText("evalRecall", fmtScore(macro.recall));
++    setText("evalF1", fmtScore(macro.f1_score));
++
++    // Keterangan singkat di bawah judul
++    const metaParts = [];
++    if (r.n_test) metaParts.push(`${r.n_test} data uji`);
++    if (r.config && r.config.svm && r.config.svm.kernel) metaParts.push(`SVM kernel ${r.config.svm.kernel} + TF-IDF`);
++    if (r.generated_at) {
++        const d = new Date(r.generated_at);
++        if (!isNaN(d)) {
++            metaParts.push("dihasilkan " + d.toLocaleString("id-ID", {
++                day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"
++            }));
++        }
++    }
++    const metaEl = document.getElementById("evalMeta");
++    if (metaEl) {
++        metaEl.className = "text-muted small mb-3";
++        metaEl.textContent = metaParts.join(" • ") || "Hasil evaluasi model pada data uji.";
++    }
++
++    // Tabel per kelas + baris rata-rata
++    const classes = EVAL_CLASS_ORDER.filter(k => per[k])
++        .concat(Object.keys(per).filter(k => !EVAL_CLASS_ORDER.includes(k)));
++
++    const f1Cell = (f1, color) => {
++        const width = Math.max(0, Math.min(100, (Number(f1) || 0) * 100));
++        return `<div class="eval-f1"><span>${fmtScore(f1)}</span>
++                    <div class="eval-bar"><span style="width:${width}%; background:${color};"></span></div></div>`;
++    };
++
++    let rows = classes.map(k => {
++        const m = per[k];
++        const meta = EVAL_CLASS_META[k] || { label: k, color: "var(--primary)" };
++        return `<tr>
++            <td><span class="eval-dot" style="background:${meta.color};"></span>${escapeHtml(meta.label)}</td>
++            <td class="text-end">${fmtScore(m.precision)}</td>
++            <td class="text-end">${fmtScore(m.recall)}</td>
++            <td>${f1Cell(m.f1_score, meta.color)}</td>
++            <td class="text-end">${escapeHtml(m.support ?? "-")}</td>
++        </tr>`;
++    }).join("");
++
++    const avgRow = (label, m) => `<tr class="eval-avg">
++            <td>${label}</td>
++            <td class="text-end">${fmtScore(m.precision)}</td>
++            <td class="text-end">${fmtScore(m.recall)}</td>
++            <td>${f1Cell(m.f1_score, "var(--primary)")}</td>
++            <td class="text-end">${escapeHtml(r.n_test ?? "-")}</td>
++        </tr>`;
++    rows += avgRow("Rata-rata makro", macro) + avgRow("Rata-rata tertimbang", weighted);
++
++    const tbody = document.getElementById("evalTableBody");
++    if (tbody) tbody.innerHTML = rows;
++
++    // Catatan otomatis: kelas terlemah & efek ketidakseimbangan kelas
++    const noteEl = document.getElementById("evalNote");
++    if (noteEl && classes.length) {
++        const weakest = classes.reduce((a, b) => (per[b].f1_score < per[a].f1_score ? b : a));
++        const wMeta = EVAL_CLASS_META[weakest] || { label: weakest };
++        let note = `Kelas paling lemah: <b>${escapeHtml(wMeta.label)}</b> `
++                 + `(F1 ${fmtScore(per[weakest].f1_score)}, recall ${fmtScore(per[weakest].recall)}).`;
++
++        const totalSupport = classes.reduce((sum, k) => sum + (Number(per[k].support) || 0), 0);
++        const biggest = classes.reduce((a, b) => (per[b].support > per[a].support ? b : a));
++        const share = totalSupport ? (Number(per[biggest].support) / totalSupport) : 0;
++        if (share >= 0.5 && Number(r.accuracy) - Number(macro.f1_score) > 0.05) {
++            const bMeta = EVAL_CLASS_META[biggest] || { label: biggest };
++            note += ` Akurasi lebih tinggi dari F1 rata-rata makro karena kelas <b>${escapeHtml(bMeta.label)}</b> `
++                  + `mendominasi data uji (${(share * 100).toFixed(1)}%).`;
++        }
++        noteEl.innerHTML = note;
++        noteEl.classList.remove("d-none");
++    }
++}
++
++function showEvaluationError(message) {
++    const metaEl = document.getElementById("evalMeta");
++    if (metaEl) {
++        metaEl.className = "text-danger small mb-3";
++        metaEl.textContent = (message || "Skor evaluasi belum dapat dimuat.") + " Latih model terlebih dahulu bila belum ada.";
++    }
++    const tbody = document.getElementById("evalTableBody");
++    if (tbody) tbody.innerHTML = `<tr><td colspan="5" class="text-center text-muted">Skor evaluasi belum tersedia.</td></tr>`;
++}
++
++// Muat sekali (evaluasi bersifat global, tidak mengikuti filter); coba lagi bila sebelumnya gagal.
++function loadEvaluation() {
++    if (evaluationLoaded) return Promise.resolve(true);
++    if (evaluationPromise) return evaluationPromise;
++    evaluationPromise = fetch("/get-evaluation")
++        .then(res => res.json().then(data => ({ ok: res.ok, data })))
++        .then(({ ok, data }) => {
++            if (!ok || data.status !== "success" || !data.data) {
++                throw new Error(data.message || "Laporan evaluasi belum ada.");
++            }
++            renderEvaluation(data.data);
++            evaluationLoaded = true;
++            return true;
++        })
++        .catch(err => {
++            showEvaluationError(err.message);
++            return false;
++        })
++        .finally(() => { evaluationPromise = null; });
++    return evaluationPromise;
++}
++
+ /* ============ Uji Sentimen ============ */
+ const MIN_KATA_UJI = 6;
+ let modelUjiSiap = false;
+diff --git a/static/style.css b/static/style.css
+index 1bc227b..27b9b9f 100644
+--- a/static/style.css
++++ b/static/style.css
+@@ -438,6 +438,72 @@ body.dashboard-page { background-color: var(--bg-page); }
+ /* Chart container responsive */
+ .chart-container { height: 350px; }
+ 
++/* =========================================================
++   SKOR EVALUASI MODEL (halaman Sentimen & Evaluasi)
++   ========================================================= */
++.eval-kpi {
++    height: 100%;
++    display: flex;
++    flex-direction: column;
++    gap: 2px;
++    padding: 14px 16px;
++    background: var(--bg-page);
++    border-left: 4px solid var(--primary);
++    border-radius: 14px;
++}
++.eval-kpi-label {
++    font-size: 12px;
++    font-weight: 700;
++    letter-spacing: .4px;
++    text-transform: uppercase;
++    color: var(--text-muted);
++}
++.eval-kpi-value {
++    font-size: 1.75rem;
++    font-weight: 800;
++    letter-spacing: -.5px;
++    line-height: 1.15;
++    color: var(--primary);
++}
++.eval-kpi-sub { font-size: 11px; color: var(--text-muted); }
++
++.eval-table th {
++    font-size: 12px;
++    font-weight: 700;
++    color: var(--primary);
++    background-color: var(--bg-page) !important;
++    border-bottom: 2px solid var(--accent) !important;
++}
++.eval-table td { font-size: 13px; }
++.eval-table tr.eval-avg td { font-weight: 700; background-color: rgba(227, 242, 253, .55); }
++.eval-dot {
++    display: inline-block;
++    width: 10px; height: 10px;
++    margin-right: 8px;
++    border-radius: 50%;
++}
++.eval-f1 { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
++.eval-bar {
++    width: 90px; height: 6px;
++    background: #E2E8F0;
++    border-radius: 999px;
++    overflow: hidden;
++}
++.eval-bar > span { display: block; height: 100%; border-radius: 999px; }
++.eval-note {
++    font-size: 12.5px;
++    color: var(--text-body);
++    background: rgba(13, 71, 161, .05);
++    border-left: 3px solid var(--primary);
++    border-radius: 8px;
++    padding: 10px 12px;
++}
++
++@media (max-width: 480px) {
++    .eval-kpi-value { font-size: 1.4rem; }
++    .eval-bar { width: 56px; }
++}
++
+ /* =========================================================
+    FORM VALIDATION (DATE FILTER)
+    ========================================================= */
+diff --git a/templates/dashboard.html b/templates/dashboard.html
+index 2986cb5..fdaecf5 100644
+--- a/templates/dashboard.html
++++ b/templates/dashboard.html
+@@ -339,7 +339,7 @@
+                                      onerror="this.style.display='none'; document.getElementById('imgWordcloudFallback').style.display='block';">
+                                 <div id="imgWordcloudFallback" class="text-muted small py-5" style="display:none;">
+                                     <i class="fa-regular fa-image fa-2x mb-2 d-block"></i>
+-                                    Visualisasi Word Cloud belum tersedia.
++                                    Tidak ada data untuk filter ini, atau Word Cloud belum tersedia.
+                                 </div>
+                             </div>
+                         </div>
+@@ -351,9 +351,68 @@
+             <div id="page-sentimen" class="app-page d-none">
+                 <div class="mb-4">
+                     <h2 class="fw-800 mb-1">Sentimen & Evaluasi Model</h2>
+-                    <p class="text-muted mb-0">Heatmap mengikuti filter aktif. Confusion Matrix = evaluasi global model.</p>
++                    <p class="text-muted mb-0">Skor evaluasi dan Confusion Matrix = evaluasi global model. Heatmap mengikuti filter aktif.</p>
+                 </div>
+                 <div class="row g-4">
++                    <!-- Skor Evaluasi Model (dari evaluation.json via /get-evaluation) -->
++                    <div class="col-12">
++                        <div class="card border-0 shadow-sm p-4 rounded-4" id="evalCard">
++                            <h6 class="fw-800 mb-1">
++                                <i class="fa-solid fa-bullseye me-2" style="color: var(--primary);"></i>Skor Evaluasi Model
++                                <span class="badge bg-info text-dark ms-2">Evaluasi Global</span>
++                            </h6>
++                            <p class="text-muted small mb-3" id="evalMeta">Memuat skor evaluasi...</p>
++
++                            <div class="row g-3 mb-4">
++                                <div class="col-6 col-lg-3">
++                                    <div class="eval-kpi">
++                                        <span class="eval-kpi-label">Akurasi</span>
++                                        <span class="eval-kpi-value" id="evalAccuracy">-</span>
++                                        <span class="eval-kpi-sub" id="evalAccuracySub">pada data uji</span>
++                                    </div>
++                                </div>
++                                <div class="col-6 col-lg-3">
++                                    <div class="eval-kpi">
++                                        <span class="eval-kpi-label">Precision</span>
++                                        <span class="eval-kpi-value" id="evalPrecision">-</span>
++                                        <span class="eval-kpi-sub">rata-rata makro</span>
++                                    </div>
++                                </div>
++                                <div class="col-6 col-lg-3">
++                                    <div class="eval-kpi">
++                                        <span class="eval-kpi-label">Recall</span>
++                                        <span class="eval-kpi-value" id="evalRecall">-</span>
++                                        <span class="eval-kpi-sub">rata-rata makro</span>
++                                    </div>
++                                </div>
++                                <div class="col-6 col-lg-3">
++                                    <div class="eval-kpi">
++                                        <span class="eval-kpi-label">F1-Score</span>
++                                        <span class="eval-kpi-value" id="evalF1">-</span>
++                                        <span class="eval-kpi-sub">rata-rata makro</span>
++                                    </div>
++                                </div>
++                            </div>
++
++                            <div class="table-responsive">
++                                <table class="table table-sm align-middle eval-table mb-0">
++                                    <thead>
++                                        <tr>
++                                            <th>Kelas</th>
++                                            <th class="text-end">Precision</th>
++                                            <th class="text-end">Recall</th>
++                                            <th class="text-end">F1-Score</th>
++                                            <th class="text-end">Support</th>
++                                        </tr>
++                                    </thead>
++                                    <tbody id="evalTableBody">
++                                        <tr><td colspan="5" class="text-center text-muted">Memuat...</td></tr>
++                                    </tbody>
++                                </table>
++                            </div>
++                            <div id="evalNote" class="eval-note mt-3 d-none"></div>
++                        </div>
++                    </div>
+                     <div class="col-12">
+                         <div class="card border-0 shadow-sm p-4 rounded-4">
+                             <h6 class="fw-800 mb-3">Heatmap Sentimen <span class="badge bg-secondary ms-2">Python</span></h6>
+@@ -362,7 +421,7 @@
+                                      onerror="this.style.display='none'; document.getElementById('imgHeatmapFallback').style.display='block';">
+                                 <div id="imgHeatmapFallback" class="text-muted small py-5" style="display:none;">
+                                     <i class="fa-regular fa-image fa-2x mb-2 d-block"></i>
+-                                    Visualisasi Heatmap belum tersedia.
++                                    Tidak ada data untuk filter ini, atau Heatmap belum tersedia.
+                                 </div>
+                             </div>
+                         </div>
