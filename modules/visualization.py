@@ -23,6 +23,8 @@ import seaborn as sns
 import pandas as pd
 import numpy as np
 from wordcloud import WordCloud
+from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.patches import Rectangle
 
 # Gaya konsisten
 sns.set_style("whitegrid")
@@ -164,9 +166,9 @@ def audit_aspect_coverage(df, sample_missing=8, sample_hits=3):
                 print(f"      · {ex_short}")
 
 
-def _fig_to_base64(fig):
+def _fig_to_base64(fig, dpi=110):
     buf = io.BytesIO()
-    fig.savefig(buf, format="png", bbox_inches="tight", dpi=110, facecolor="white")
+    fig.savefig(buf, format="png", bbox_inches="tight", dpi=dpi, facecolor="white")
     buf.seek(0)
     img = base64.b64encode(buf.read()).decode("utf-8")
     plt.close(fig)
@@ -492,54 +494,101 @@ def chart_wordcloud(df, only_negative=False, extra_stopwords=None):
     return _fig_to_base64(fig)
 
 
-def chart_heatmap(df, mode="count"):
-    """
-    Heatmap sentimen per pelabuhan.
+# Urutan & warna sentimen untuk heatmap/confusion matrix. Disamakan dengan
+# dashboard (donut, KPI) supaya konsisten: Positif -> Netral -> Negatif.
+SENTIMENT_ORDER = ("POSITIF", "NETRAL", "NEGATIF")
+SENTIMENT_LABELS = {"POSITIF": "Positif", "NETRAL": "Netral", "NEGATIF": "Negatif"}
+SENTIMENT_COLORS = {"POSITIF": "#00B809", "NETRAL": "#FFCC00", "NEGATIF": "#9D0003"}
+# Batas atas skala warna heatmap (dalam %). Tetap (tidak bergantung filter) agar
+# arti warna sama untuk satu pelabuhan maupun banyak pelabuhan.
+HEATMAP_VMAX = {"POSITIF": 100.0, "NETRAL": 50.0, "NEGATIF": 50.0}
+_MUTED = "#6c757d"
 
-    mode="count"   : jumlah ulasan (default). Volume absolut.
-    mode="percent" : persentase komposisi sentimen per pelabuhan. Lebih adil
-                     untuk membandingkan pelabuhan dengan volume berbeda.
+
+def _sentiment_cmap(sentiment):
+    """Putih -> warna sentimen. Intensitas = besar nilai, hue = jenis sentimen."""
+    return LinearSegmentedColormap.from_list(
+        f"w_{sentiment}", ["#FFFFFF", SENTIMENT_COLORS[sentiment]]
+    )
+
+
+def chart_heatmap(df):
+    """
+    Heatmap komposisi sentimen per pelabuhan.
+
+    - Angka utama = persentase ulasan pelabuhan tsb. (tiap baris berjumlah 100%),
+      angka dalam kurung = jumlah ulasan. Dengan begitu pelabuhan ber-volume
+      besar tidak otomatis tampak "lebih baik".
+    - Warna per kolom memakai hue sentimennya (hijau/kuning/merah) dengan skala
+      tetap (HEATMAP_VMAX), jadi intensitas berarti sama untuk filter apa pun.
+    - Baris diurutkan dari volume ulasan terbanyak; volume ditulis di label baris.
     """
     df = _normalize_sentiment(df)
     if "lokasi" not in df.columns or "_sentimen" not in df.columns:
         return _placeholder("Data tidak cukup")
 
-    pivot = pd.crosstab(df["lokasi"], df["_sentimen"])
-    for col in ("POSITIF", "NETRAL", "NEGATIF"):
-        if col not in pivot.columns:
-            pivot[col] = 0
-    pivot = pivot[["POSITIF", "NETRAL", "NEGATIF"]]
-    if pivot.empty:
+    counts = pd.crosstab(df["lokasi"], df["_sentimen"])
+    for col in SENTIMENT_ORDER:
+        if col not in counts.columns:
+            counts[col] = 0
+    counts = counts[list(SENTIMENT_ORDER)]
+    counts = counts[counts.sum(axis=1) > 0]
+    if counts.empty:
         return _placeholder("Data terlalu sedikit")
 
-    fig, ax = plt.subplots(figsize=(7, 4))
+    totals = counts.sum(axis=1).sort_values(ascending=False)
+    counts = counts.loc[totals.index]
+    pct = counts.div(totals, axis=0) * 100
 
-    if mode == "percent":
-        row_total = pivot.sum(axis=1).replace(0, np.nan)
-        pct = (pivot.div(row_total, axis=0) * 100).fillna(0)
-        annot = np.vectorize(lambda v: f"{v:.1f}%")(pct.values)
+    annot = pd.DataFrame(
+        [
+            [f"{pct.iloc[i, j]:.1f}%\n({int(counts.iloc[i, j])})" for j in range(len(SENTIMENT_ORDER))]
+            for i in range(len(counts))
+        ],
+        index=counts.index, columns=counts.columns,
+    )
+
+    n_rows = len(counts)
+    fig, ax = plt.subplots(figsize=(7.5, 2.0 + 0.8 * n_rows))
+    for j, sent in enumerate(SENTIMENT_ORDER):
+        mask = np.ones(pct.shape, dtype=bool)
+        mask[:, j] = False  # gambar satu kolom per panggilan, skala warna sendiri
         sns.heatmap(
-            pct, annot=annot, fmt="", cmap="RdYlGn",
-            cbar=True, linewidths=2, linecolor="white",
+            pct, mask=mask, annot=annot, fmt="",
+            cmap=_sentiment_cmap(sent), vmin=0, vmax=HEATMAP_VMAX[sent],
+            cbar=False, linewidths=3, linecolor="white",
             annot_kws={"fontsize": 10, "fontweight": "bold"}, ax=ax,
         )
-        title = "Persentase Sentimen per Pelabuhan"
-    else:
-        sns.heatmap(
-            pivot, annot=True, fmt="d", cmap="RdYlGn",
-            cbar=True, linewidths=2, linecolor="white",
-            annot_kws={"fontsize": 11, "fontweight": "bold"}, ax=ax,
-        )
-        title = "Jumlah Ulasan per Sentimen & Pelabuhan"
 
-    ax.set_title(title, fontsize=13, pad=10)
-    ax.set_xlabel("Sentimen")
-    ax.set_ylabel("Pelabuhan")
+    ax.grid(False)
+    ax.set_xticklabels([SENTIMENT_LABELS[c] for c in SENTIMENT_ORDER], rotation=0, fontsize=10)
+    ax.set_yticklabels(
+        [f"{name}\n(n={int(totals[name])})" for name in counts.index], rotation=0, fontsize=10
+    )
+    ax.tick_params(axis="both", length=0)
+    ax.set_xlabel("")
+    ax.set_ylabel("")
+    ax.set_title("Komposisi Sentimen per Pelabuhan", fontsize=13, pad=34)
+    ax.text(
+        0.5, 1.03,
+        "Angka = % ulasan pelabuhan (jumlah ulasan). Skala warna tetap: "
+        "Positif 0-100%, Netral & Negatif 0-50%.",
+        transform=ax.transAxes, ha="center", va="bottom", fontsize=8, color=_MUTED,
+    )
     fig.tight_layout()
-    return _fig_to_base64(fig)
+    return _fig_to_base64(fig, dpi=140)
 
 
 def chart_confusion_matrix(eval_path="data/models/evaluation.json"):
+    """
+    Confusion matrix dari evaluation.json (evaluasi global, tidak mengikuti filter).
+
+    - Baris = kelas aktual, kolom = prediksi, urutan Positif -> Netral -> Negatif.
+    - Warna & persentase dinormalisasi PER BARIS (porsi dari kelas aktual),
+      jadi diagonal = recall. Kelas minoritas (mis. Netral) tetap terbaca
+      meski jumlahnya jauh lebih kecil dari kelas Positif.
+    - Jumlah mentah tetap tampil di tiap sel; n per kelas ada di label baris.
+    """
     if not os.path.exists(eval_path):
         return _placeholder("Model belum dilatih")
     try:
@@ -554,7 +603,7 @@ def chart_confusion_matrix(eval_path="data/models/evaluation.json"):
     if not matrix or not labels:
         return _placeholder("Confusion matrix tidak tersedia")
 
-    arr = np.array(matrix)
+    arr = np.array(matrix, dtype=float)
     # [FIX G] Validasi dimensi matriks vs jumlah label.
     if arr.ndim != 2 or arr.shape != (len(labels), len(labels)):
         return _placeholder(
@@ -562,21 +611,54 @@ def chart_confusion_matrix(eval_path="data/models/evaluation.json"):
             f"shape={arr.shape}, labels={len(labels)}"
         )
 
-    fig, ax = plt.subplots(figsize=(5.5, 4.5))
+    # Samakan urutan label dengan bagian dashboard lain.
+    labels = [str(l).strip().upper() for l in labels]
+    order = [l for l in SENTIMENT_ORDER if l in labels] + [l for l in labels if l not in SENTIMENT_ORDER]
+    idx = [labels.index(l) for l in order]
+    arr = arr[np.ix_(idx, idx)]
+    labels = order
+
+    support = arr.sum(axis=1)
+    total = float(arr.sum())
+    norm = np.divide(arr, support[:, None], out=np.zeros_like(arr), where=support[:, None] > 0)
+    accuracy = report.get("accuracy")
+    if accuracy is None:
+        accuracy = float(np.trace(arr) / total) if total else 0.0
+
+    annot = np.array(
+        [[f"{int(arr[i, j])}\n{norm[i, j] * 100:.1f}%" for j in range(len(labels))] for i in range(len(labels))]
+    )
+    names = [SENTIMENT_LABELS.get(l, l.title()) for l in labels]
+
+    fig, ax = plt.subplots(figsize=(6.2, 5.2))
     sns.heatmap(
-        arr, annot=True, fmt="d", cmap="Blues",
-        xticklabels=labels, yticklabels=labels,
-        linewidths=2, linecolor="white", cbar=False,
-        annot_kws={"fontsize": 12, "fontweight": "bold"}, ax=ax,
+        norm, annot=annot, fmt="", cmap="Blues", vmin=0, vmax=1,
+        xticklabels=names,
+        yticklabels=[f"{n}\n(n={int(s)})" for n, s in zip(names, support)],
+        linewidths=3, linecolor="white", cbar=False,
+        annot_kws={"fontsize": 11, "fontweight": "bold"}, ax=ax,
     )
+    # Bingkai tipis pada diagonal (prediksi benar) agar mudah dibedakan.
+    for i in range(len(labels)):
+        ax.add_patch(Rectangle((i, i), 1, 1, fill=False, edgecolor=COLORS["primary"], lw=2.4, clip_on=False))
+
+    ax.grid(False)
+    ax.tick_params(axis="both", length=0)
+    ax.tick_params(axis="x", labelrotation=0)
+    ax.tick_params(axis="y", labelrotation=0)
+    ax.set_xlabel("Prediksi", labelpad=10)
+    ax.set_ylabel("Aktual", labelpad=12)
     ax.set_title(
-        f"Confusion Matrix (Akurasi: {report.get('accuracy', 0):.2%})",
-        fontsize=12, pad=10,
+        f"Confusion Matrix\nAkurasi {accuracy:.2%}  •  {int(total)} data uji",
+        fontsize=12, pad=12,
     )
-    ax.set_xlabel("Prediksi")
-    ax.set_ylabel("Aktual")
+    fig.text(
+        0.5, -0.01,
+        "Warna & persentase = porsi dari kelas aktual (diagonal = recall). Angka besar = jumlah ulasan.",
+        ha="center", va="top", fontsize=8, color=_MUTED,
+    )
     fig.tight_layout()
-    return _fig_to_base64(fig)
+    return _fig_to_base64(fig, dpi=140)
 
 
 def _placeholder(msg):

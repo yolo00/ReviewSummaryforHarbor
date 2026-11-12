@@ -341,7 +341,7 @@
                                      onerror="this.style.display='none'; document.getElementById('imgWordcloudFallback').style.display='block';">
                                 <div id="imgWordcloudFallback" class="text-muted small py-5" style="display:none;">
                                     <i class="fa-regular fa-image fa-2x mb-2 d-block"></i>
-                                    Visualisasi Word Cloud belum tersedia.
+                                    Tidak ada data untuk filter ini, atau Word Cloud belum tersedia.
                                 </div>
                             </div>
                         </div>
@@ -353,9 +353,68 @@
             <div id="page-sentimen" class="app-page d-none">
                 <div class="mb-4">
                     <h2 class="fw-800 mb-1">Sentimen & Evaluasi Model</h2>
-                    <p class="text-muted mb-0">Heatmap mengikuti filter aktif. Confusion Matrix = evaluasi global model.</p>
+                    <p class="text-muted mb-0">Skor evaluasi dan Confusion Matrix = evaluasi global model. Heatmap mengikuti filter aktif.</p>
                 </div>
                 <div class="row g-4">
+                    <!-- Skor Evaluasi Model (dari evaluation.json via /get-evaluation) -->
+                    <div class="col-12">
+                        <div class="card border-0 shadow-sm p-4 rounded-4" id="evalCard">
+                            <h6 class="fw-800 mb-1">
+                                <i class="fa-solid fa-bullseye me-2" style="color: var(--primary);"></i>Skor Evaluasi Model
+                                <span class="badge bg-info text-dark ms-2">Evaluasi Global</span>
+                            </h6>
+                            <p class="text-muted small mb-3" id="evalMeta">Memuat skor evaluasi...</p>
+
+                            <div class="row g-3 mb-4">
+                                <div class="col-6 col-lg-3">
+                                    <div class="eval-kpi">
+                                        <span class="eval-kpi-label">Akurasi</span>
+                                        <span class="eval-kpi-value" id="evalAccuracy">-</span>
+                                        <span class="eval-kpi-sub" id="evalAccuracySub">pada data uji</span>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-lg-3">
+                                    <div class="eval-kpi">
+                                        <span class="eval-kpi-label">Precision</span>
+                                        <span class="eval-kpi-value" id="evalPrecision">-</span>
+                                        <span class="eval-kpi-sub">rata-rata makro</span>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-lg-3">
+                                    <div class="eval-kpi">
+                                        <span class="eval-kpi-label">Recall</span>
+                                        <span class="eval-kpi-value" id="evalRecall">-</span>
+                                        <span class="eval-kpi-sub">rata-rata makro</span>
+                                    </div>
+                                </div>
+                                <div class="col-6 col-lg-3">
+                                    <div class="eval-kpi">
+                                        <span class="eval-kpi-label">F1-Score</span>
+                                        <span class="eval-kpi-value" id="evalF1">-</span>
+                                        <span class="eval-kpi-sub">rata-rata makro</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-sm align-middle eval-table mb-0">
+                                    <thead>
+                                        <tr>
+                                            <th>Kelas</th>
+                                            <th class="text-end">Precision</th>
+                                            <th class="text-end">Recall</th>
+                                            <th class="text-end">F1-Score</th>
+                                            <th class="text-end">Support</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="evalTableBody">
+                                        <tr><td colspan="5" class="text-center text-muted">Memuat...</td></tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="evalNote" class="eval-note mt-3 d-none"></div>
+                        </div>
+                    </div>
                     <div class="col-12">
                         <div class="card border-0 shadow-sm p-4 rounded-4">
                             <h6 class="fw-800 mb-3">Heatmap Sentimen <span class="badge bg-secondary ms-2">Python</span></h6>
@@ -364,7 +423,7 @@
                                      onerror="this.style.display='none'; document.getElementById('imgHeatmapFallback').style.display='block';">
                                 <div id="imgHeatmapFallback" class="text-muted small py-5" style="display:none;">
                                     <i class="fa-regular fa-image fa-2x mb-2 d-block"></i>
-                                    Visualisasi Heatmap belum tersedia.
+                                    Tidak ada data untuk filter ini, atau Heatmap belum tersedia.
                                 </div>
                             </div>
                         </div>
