@@ -115,14 +115,14 @@ body.dashboard-page { background-color: var(--bg-page); }
     position: absolute; inset: 0;
     background: linear-gradient(
         to right,
-        rgba(13, 71, 161, .85) 0%,
-        rgba(13, 71, 161, .35) 60%,
-        rgba(13, 71, 161, .15) 100%
+        rgb(13, 71, 161, 0.85) 20%,
+        rgb(13, 71, 161, 0.35) 50%,
+        rgb(13, 71, 161, 0.15) 100%
     );
     z-index: 1;
 }
 .hero-content { position: relative; z-index: 2; }
-.hero-title    { font-size: 16px; letter-spacing: 1.5px; color: var(--accent); font-weight: 600; }
+.hero-title    { font-size: 16px; letter-spacing: 1.5px; color: var(--bg-page); font-weight: 600; }
 .hero-headline {
     font-size: 42px; line-height: 1.15;
     margin-bottom: 20px;
@@ -142,6 +142,7 @@ body.dashboard-page { background-color: var(--bg-page); }
     position: relative;
     z-index: 10;
 }
+
 .filter-label { font-size: 13px; font-weight: 600; color: var(--text-muted); margin-bottom: 8px; }
 
 /* Link "Hapus Semua Pilihan" pada filter landing page */
