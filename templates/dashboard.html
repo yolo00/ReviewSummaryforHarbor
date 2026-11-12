@@ -19,8 +19,9 @@
         <button class="hamburger-btn" id="sidebarToggle" aria-label="Buka menu">
             <i class="fa-solid fa-bars"></i>
         </button>
+        <!-- Logo Image Implementation for Mobile Bar -->
         <a href="/dashboard" class="mobile-brand">
-            <i class="fa-solid fa-anchor me-1"></i>FerryPulse
+            <img src="{{ url_for('static', filename='Logo.png') }}" alt="Ferry Pulse Logo" class="brand-logo">
         </a>
     </div>
 
@@ -30,7 +31,8 @@
     <!-- SIDEBAR -->
     <aside id="sidebar-wrapper">
         <div class="sidebar-heading px-4 fw-800 fs-4">
-            <span><i class="fa-solid fa-anchor me-2"></i>FerryPulse</span>
+            <!-- Logo Image Implementation for Sidebar Desktop -->
+            <img src="{{ url_for('static', filename='Logo.png') }}" alt="Ferry Pulse Logo" class="brand-logo sidebar-brand-logo">
             <button class="sidebar-close d-lg-none" id="sidebarClose" aria-label="Tutup menu">
                 <i class="fa-solid fa-xmark"></i>
             </button>
@@ -66,7 +68,7 @@
                 </div>
             </div>
 
-                    <label class="form-label fw-600 text-muted mb-1" style="font-size: 13px;">Rentang Tanggal</label>
+            <label class="form-label fw-600 text-muted mb-1" style="font-size: 13px;">Rentang Tanggal</label>
             <div class="row g-2 mb-2">
                 <div class="col-6">
                     <label class="text-muted mb-1" style="font-size: 11px;">Dari:</label>

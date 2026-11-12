@@ -430,8 +430,6 @@ def chart_wordcloud(df, only_negative=False, extra_stopwords=None):
     if "final_text" not in df.columns:
         return _placeholder("Data teks tidak tersedia")
 
-    # [FIX E] Jika diminta negatif, WAJIB ada kolom sentimen.
-    # Jangan diam-diam membuat WordCloud seluruh ulasan.
     if only_negative:
         df = _normalize_sentiment(df)
         if "_sentimen" not in df.columns:
@@ -445,14 +443,39 @@ def chart_wordcloud(df, only_negative=False, extra_stopwords=None):
     if not combined:
         return _placeholder("Tidak ada teks")
 
-    stopwords = {"a", "i", "u", "e", "o", "nya", "pun", "lah", "kah"}
+    # Stopwords dasar + kata-kata umum/penghubung/bahasa inggris yang ingin dibuang
+    stopwords = {
+        "a", "i", "u", "e", "o", "nya", "pun", "lah", "kah", "yg", "aja", "udah",
+        # Bahasa Inggris umum & artikel
+        "the", "and", "to", "is", "it", "in", "for", "of", "are", "you", "from",
+        "not", "there", "this", "with", "on", "at", "but", "be", "as", "so",
+        "have", "that", "or", "if", "we", "was", "my", "can", "will", "like",
+        "no", "your", "about", "they", "what", "which", "who", "when", "where",
+        "why", "how", "all", "any", "both", "each", "few", "more", "most", "other",
+        "some", "such", "nor", "only", "own", "same", "than", "too", "don", "should",
+        "now", "am", "were", "been", "being", "has", "had", "do", "does", "did",
+        "doing", "an", "because", "until", "while", "by", "against", "between",
+        "into", "through", "during", "before", "after", "above", "below", "up",
+        "down", "out", "off", "over", "under", "again", "further", "then", "once",
+        "here", "just", "very", "its", "so", "as", "to",
+        # Kata hubung & kata umum Bahasa Indonesia yang sering muncul
+        "tidak", "di", "dan", "yang", "untuk", "dari", "ini", "itu", "ke", "ada",
+        "mereka", "kami", "kita", "saya", "pada", "adalah", "sebagai", "karena",
+        "bahwa", "oleh", "juga", "sudah", "bisa", "atau", "namun", "masih", "mau",
+        "jadi", "akan", "saat", "lagi", "perlu", "jika", "lain", "setelah", "beberapa",
+        "sampai", "tetapi", "dapat", "gak", "ga", "agak", "semua", "sekitar",
+        "seperti", "salah", "saja", "sih", "ya", "terus", "padahal", "walaupun",
+        "meskipun", "sedang", "telah", "sering", "kadang", "jarang", "pasti",
+        "mungkin", "boleh", "wajib", "serta", "pun", "kok", "kan", "dong", "deh"
+    }
+    
     if extra_stopwords:
         stopwords |= set(extra_stopwords)
 
     try:
         wc = WordCloud(
             width=800, height=400, background_color="white",
-            colormap="RdYlGn", max_words=80, collocations=False,
+            colormap="Blues", max_words=60, collocations=False, # Menggunakan colormap 'Blues' agar selaras dengan tema web
             min_font_size=10, stopwords=stopwords,
         ).generate(combined)
     except ValueError:

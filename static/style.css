@@ -498,3 +498,44 @@ body.dashboard-page { background-color: var(--bg-page); }
     .filter-card { margin-left: -4px; margin-right: -4px; }
     .chart-container { height: 240px; }
 }
+
+/* =========================================================
+   LOGO PADA NAVBAR DAN SIDEBAR
+   ========================================================= */
+/* Pengaturan dasar untuk image logo */
+.brand-logo {
+    max-height: 38px; /* Ukuran standar logo untuk navbar */
+    width: auto;
+    object-fit: contain;
+    transition: all 0.3s ease;
+}
+
+/* Mengganti teks brand dengan logo di Landing Page */
+.landing-page .navbar-brand {
+    display: flex;
+    align-items: center;
+    padding: 0; /* Menghilangkan padding agar logo presisi */
+}
+
+/* Penyesuaian logo di Sidebar Dashboard (Desktop) */
+.sidebar-brand-logo {
+    max-height: 42px; /* Logo sedikit lebih besar di sidebar desktop */
+    width: auto;
+}
+
+/* Penyesuaian logo di Mobile Topbar Dashboard */
+.mobile-brand {
+    display: flex;
+    align-items: center;
+    padding: 0;
+}
+.mobile-brand .brand-logo {
+    max-height: 32px; /* Logo sedikit lebih kecil di mobile untuk menghemat ruang */
+}
+
+/* Responsive untuk logo di layar HP kecil */
+@media (max-width: 768px) {
+    .brand-logo {
+        max-height: 30px;
+    }
+}
